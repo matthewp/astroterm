@@ -70,23 +70,7 @@ func NewDevServer(app *tview.Application) *DevServerUI {
 			devServer.killServer()
 		}
 	})
-	btn.SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
-		switch action {
-		case tview.MouseLeftDown:
-			if btn.InRect(event.Position()) {
-				form.SetButtonBackgroundColor(Styles.MoreContrastBackgroundColor)
-				go (func() {
-					app.Draw()
-				})()
-			}
-		case tview.MouseLeftUp:
-			if btn.InRect(event.Position()) {
-				form.SetButtonBackgroundColor(Styles.ContrastBackgroundColor)
-			}
-		}
-
-		return action, event
-	})
+	MakeToggleableButton(btn, form, app)
 	flex.AddItem(form, 3, 0, false)
 	flex.AddItem(tv, 0, 1, false)
 
