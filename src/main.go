@@ -1,9 +1,9 @@
 package main
 
 import (
-	"astroterm/src/env"
 	"astroterm/src/ui"
-	"fmt"
+
+	"github.com/rivo/tview"
 )
 
 func main() {
@@ -11,12 +11,19 @@ func main() {
 }
 
 func testing() {
-	env, err := env.GetEnvironment()
-	if err != nil {
+
+	app := tview.NewApplication().EnableMouse(true)
+	button := tview.NewButton("Hit Enter to close").SetSelectedFunc(func() {
+		app.Stop()
+	})
+	button.SetBorder(true).SetRect(0, 0, 22, 3)
+	/*button.SetBackgroundColorActivated(tcell.ColorRebeccaPurple)
+	button.SetBackgroundColor(tcell.ColorAliceBlue)
+	button.SetLabelColor(tcell.ColorRebeccaPurple)*/
+	if err := app.SetRoot(button, false).SetFocus(button).Run(); err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("PWD %s", env.ConfigPath)
 }
 
 func start() {

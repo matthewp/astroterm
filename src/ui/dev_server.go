@@ -6,6 +6,7 @@ import (
 
 	"astroterm/src/astro"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
@@ -26,6 +27,7 @@ func NewDevServer(app *tview.Application) *DevServerUI {
 	flex.SetTitle("Development Server")
 	flex.SetTitleAlign(tview.AlignLeft)
 	flex.SetBorder(true)
+	flex.SetDirection(tview.FlexRow)
 
 	state := &serverState{
 		running: false,
@@ -33,6 +35,7 @@ func NewDevServer(app *tview.Application) *DevServerUI {
 	}
 
 	tv := tview.NewTextView()
+	tv.Write([]byte("This is some initial text\n"))
 	tv.SetChangedFunc(func() {
 		app.Draw()
 	})
@@ -47,6 +50,7 @@ func NewDevServer(app *tview.Application) *DevServerUI {
 	var btn *tview.Button
 	form := tview.NewForm()
 	form.AddButton("Start", nil)
+	form.SetButtonBackgroundColor(Styles.ContrastBackgroundColor)
 	btn = form.GetButton(0)
 	btn.SetSelectedFunc(func() {
 		var label string
@@ -61,11 +65,29 @@ func NewDevServer(app *tview.Application) *DevServerUI {
 
 		if state.running {
 			devServer.startServer()
+			form.SetButtonBackgroundColor(tcell.ColorDarkRed)
 		} else {
 			devServer.killServer()
 		}
 	})
-	flex.AddItem(form, 0, 1, false)
+	btn.SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
+		switch action {
+		case tview.MouseLeftDown:
+			if btn.InRect(event.Position()) {
+				form.SetButtonBackgroundColor(Styles.MoreContrastBackgroundColor)
+				go (func() {
+					app.Draw()
+				})()
+			}
+		case tview.MouseLeftUp:
+			if btn.InRect(event.Position()) {
+				form.SetButtonBackgroundColor(Styles.ContrastBackgroundColor)
+			}
+		}
+
+		return action, event
+	})
+	flex.AddItem(form, 3, 0, false)
 	flex.AddItem(tv, 0, 1, false)
 
 	return devServer
