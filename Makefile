@@ -6,9 +6,8 @@ LDFLAGS := -ldflags "-X 'astroterm/version.Version=${VERSION}'"
 
 .PHONY: build
 build:
-	#
-	# ################################################################################
-	# >>> TARGET: build
-	# ################################################################################
-	#
 	go build ${LDFLAGS} -o build/${BINARY}
+
+.PHONY: release
+release:
+	go build ${LDFLAGS} -o ${BINARY}
