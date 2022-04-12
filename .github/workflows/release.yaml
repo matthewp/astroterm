@@ -27,4 +27,4 @@ jobs:
         goarch: ${{ matrix.goarch }}
         goversion: "https://dl.google.com/go/go1.18.linux-amd64.tar.gz"
         extra_files: LICENSE README.md
-        build_command: make release
+        ldflags: -X 'astroterm/version.Version=${{ github.event.release.tag_name }}'
