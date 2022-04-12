@@ -4,7 +4,7 @@ import (
 	"os/exec"
 	"syscall"
 
-	"astroterm/src/astro"
+	"astroterm/astro"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -35,7 +35,6 @@ func NewDevServer(app *tview.Application) *DevServerUI {
 	}
 
 	tv := tview.NewTextView()
-	tv.Write([]byte("This is some initial text\n"))
 	tv.SetChangedFunc(func() {
 		app.Draw()
 	})

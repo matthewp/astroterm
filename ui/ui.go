@@ -1,6 +1,8 @@
 package ui
 
 import (
+	aenv "astroterm/env"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
@@ -31,14 +33,15 @@ func NewUI() *UI {
 	})
 
 	menu := newPrimitive("Menu")
+	nav := NewMainNav(app)
 	main := NewDevServer(app)
 	sideBar := newPrimitive("Side Bar")
 
 	grid := tview.NewGrid().
-		SetRows(3, 0, 3).
+		SetRows(1, 0, 1).
 		SetColumns(30, 0, 30).
 		//SetBorders(true).
-		AddItem(newPrimitive("Header"), 0, 0, 1, 3, 0, 0, false).
+		AddItem(nav, 0, 0, 1, 3, 0, 0, false).
 		AddItem(newPrimitive("Footer"), 2, 0, 1, 3, 0, 0, false)
 
 	// Layout for screens narrower than 100 cells (menu and side bar are hidden).
@@ -59,13 +62,37 @@ func NewUI() *UI {
 
 func (ui *UI) Start() error {
 	app := ui.app
-	grid := ui.grid
-	app.SetRoot(grid, true).SetFocus(grid).EnableMouse(true)
 
-	if err := app.Run(); err != nil {
+	env, err := aenv.GetEnvironment()
+
+	if env == nil {
+		return err
+	}
+
+	if env.IsAstroProject {
+		grid := ui.grid
+		app.SetRoot(grid, true).SetFocus(grid).EnableMouse(true)
+	} else {
+		naModal := notAnAstroAppModal(app)
+		app.SetRoot(naModal, true).SetFocus(naModal).EnableMouse(true)
+	}
+
+	if err = app.Run(); err != nil {
 		return err
 	}
 	return nil
+}
+
+func notAnAstroAppModal(app *tview.Application) *tview.Modal {
+	modal := tview.NewModal().
+		SetText("This does not appear to be an Astro project. Change into a directory that contains an Astro project and start astroterm again.").
+		AddButtons([]string{"Quit"}).
+		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+			if buttonLabel == "Quit" {
+				app.Stop()
+			}
+		})
+	return modal
 }
 
 func otherStuff() {

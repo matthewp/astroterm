@@ -35,3 +35,11 @@ var Styles = tview.Theme{
 	InverseTextColor:            tcell.ColorBlue,
 	ContrastSecondaryTextColor:  tcell.ColorDarkBlue,
 }
+
+var NavStyles = struct {
+	BackgroundColor tcell.Color
+	TextColor       tcell.Color
+}{
+	tcell.ColorLightGray,
+	tcell.ColorBlack,
+}

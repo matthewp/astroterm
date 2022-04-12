@@ -1,7 +1,7 @@
 package astro
 
 import (
-	aenv "astroterm/src/env"
+	aenv "astroterm/env"
 	"errors"
 	"fmt"
 	"io"

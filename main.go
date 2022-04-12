@@ -1,7 +1,7 @@
 package main
 
 import (
-	"astroterm/src/ui"
+	"astroterm/ui"
 
 	"github.com/rivo/tview"
 )

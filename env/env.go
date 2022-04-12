@@ -30,11 +30,19 @@ func GetEnvironment() (*TermEnvironment, error) {
 	if configPath == "" {
 		pkgjson := tryFindPackageJson(pwd)
 		if pkgjson == "" {
-			return nil, errors.New("Unable to find an Astro config or a package.json. Is this an Astro project?")
+			return &TermEnvironment{
+				Pwd:            pwd,
+				ConfigPath:     configPath,
+				IsAstroProject: false,
+			}, errors.New("Unable to find an Astro config or a package.json. Is this an Astro project?")
 		}
 
 		// TODO support projects without an astro.config.mjs
-		return nil, errors.New("Unable to find an Astro config file. Is this an Astro project?")
+		return &TermEnvironment{
+			Pwd:            pwd,
+			ConfigPath:     configPath,
+			IsAstroProject: true,
+		}, errors.New("Unable to find an Astro config file. Is this an Astro project?")
 	}
 
 	return &TermEnvironment{
