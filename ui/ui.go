@@ -8,11 +8,34 @@ import (
 )
 
 type UI struct {
-	app  *tview.Application
-	grid *tview.Grid
+	app   *tview.Application
+	grid  *tview.Grid
+	pages *tview.Pages
 }
 
 func NewUI() *UI {
+	app := tview.NewApplication()
+	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Rune() == 113 /* q */ {
+			app.Stop()
+			return nil
+		}
+		return event
+	})
+
+	grid := newGrid(app)
+	pages := tview.NewPages().
+		AddPage("background", grid, true, true).
+		AddPage("modal", NewFixedControls(), true, true)
+
+	return &UI{
+		app:   app,
+		grid:  grid,
+		pages: pages,
+	}
+}
+
+func newGrid(app *tview.Application) *tview.Grid {
 	newPrimitive := func(text string) tview.Primitive {
 		tv := tview.NewTextView()
 
@@ -23,41 +46,25 @@ func NewUI() *UI {
 		return tv
 	}
 
-	app := tview.NewApplication()
-	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Rune() == 113 {
-			app.Stop()
-			return nil
-		}
-		return event
-	})
-
 	menu := newPrimitive("Menu")
 	nav := NewMainNav(app)
 	main := NewDevServer(app)
-	sideBar := newPrimitive("Side Bar")
 
 	grid := tview.NewGrid().
 		SetRows(1, 0, 1).
 		SetColumns(30, 0, 30).
-		//SetBorders(true).
 		AddItem(nav, 0, 0, 1, 3, 0, 0, false).
 		AddItem(newPrimitive("Footer"), 2, 0, 1, 3, 0, 0, false)
 
 	// Layout for screens narrower than 100 cells (menu and side bar are hidden).
 	grid.AddItem(menu, 0, 0, 0, 0, 0, 0, false).
-		AddItem(main, 1, 0, 1, 3, 0, 0, false).
-		AddItem(sideBar, 0, 0, 0, 0, 0, 0, false)
+		AddItem(main, 1, 0, 1, 3, 0, 0, false)
 
 	// Layout for screens wider than 100 cells.
 	grid.AddItem(menu, 1, 0, 1, 1, 0, 100, false).
-		AddItem(main, 1, 1, 1, 1, 0, 100, false).
-		AddItem(sideBar, 1, 2, 1, 1, 0, 100, false)
+		AddItem(main, 1, 1, 1, 2, 0, 100, false)
 
-	return &UI{
-		app:  app,
-		grid: grid,
-	}
+	return grid
 }
 
 func (ui *UI) Start() error {
@@ -70,8 +77,7 @@ func (ui *UI) Start() error {
 	}
 
 	if env.IsAstroProject {
-		grid := ui.grid
-		app.SetRoot(grid, true).SetFocus(grid).EnableMouse(true)
+		app.SetRoot(ui.pages, true).SetFocus(ui.grid).EnableMouse(true)
 	} else {
 		naModal := notAnAstroAppModal(app)
 		app.SetRoot(naModal, true).SetFocus(naModal).EnableMouse(true)
