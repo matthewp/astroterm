@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"os/exec"
+	"os"
 	"syscall"
 
 	"astroterm/astro"
@@ -11,7 +11,7 @@ import (
 )
 
 type DevServerUI struct {
-	*tview.Flex
+	Flex  *tview.Flex
 	app   *tview.Application
 	tv    *tview.TextView
 	state *serverState
@@ -19,22 +19,23 @@ type DevServerUI struct {
 
 type serverState struct {
 	running bool
-	cmd     *exec.Cmd
+	proc    *os.Process
+	pid     int
 }
 
 func NewDevServer(app *tview.Application) *DevServerUI {
 	flex := tview.NewFlex()
-	flex.SetTitle("Development Server")
-	flex.SetTitleAlign(tview.AlignLeft)
-	flex.SetBorder(true)
 	flex.SetDirection(tview.FlexRow)
 
 	state := &serverState{
 		running: false,
-		cmd:     nil,
+		proc:    nil,
 	}
 
 	tv := tview.NewTextView()
+	tv.SetTitle("Logs")
+	tv.SetTitleAlign(tview.AlignLeft)
+	tv.SetBorder(true)
 	tv.SetChangedFunc(func() {
 		app.Draw()
 	})
@@ -48,6 +49,9 @@ func NewDevServer(app *tview.Application) *DevServerUI {
 
 	var btn *tview.Button
 	form := tview.NewForm()
+	form.SetTitle("Info")
+	form.SetTitleAlign(tview.AlignLeft)
+	form.SetBorder(true)
 	form.AddButton("Start", nil)
 	form.SetButtonBackgroundColor(Styles.ContrastBackgroundColor)
 	btn = form.GetButton(0)
@@ -70,10 +74,19 @@ func NewDevServer(app *tview.Application) *DevServerUI {
 		}
 	})
 	MakeToggleableButton(btn, form, app)
-	flex.AddItem(form, 3, 0, false)
+	flex.AddItem(form, 5, 0, false)
 	flex.AddItem(tv, 0, 1, false)
 
 	return devServer
+}
+
+func (ds *DevServerUI) Primitive() tview.Primitive {
+	return ds.Flex
+}
+
+func (ds *DevServerUI) Stop() bool {
+	ds.killServer()
+	return true
 }
 
 func (ds *DevServerUI) startServer() error {
@@ -81,16 +94,30 @@ func (ds *DevServerUI) startServer() error {
 	if err != nil {
 		return err
 	}
-	ds.state.cmd = cmd
+	ds.state.proc = cmd.Process
+	ds.state.pid = cmd.Process.Pid
 	return nil
 }
 
 func (ds *DevServerUI) killServer() error {
 	state := ds.state
-	if state.cmd != nil {
-		err := state.cmd.Process.Signal(syscall.SIGKILL)
-		state.cmd.Process.Wait()
-		return err
+	if state.proc != nil {
+		childPid := state.pid + 1
+		childProc, childErr := os.FindProcess(childPid)
+		if childErr == nil {
+			childProc.Signal(syscall.SIGKILL)
+			childProc.Wait()
+		}
+
+		err := state.proc.Signal(syscall.SIGKILL)
+		state.proc.Wait()
+
+		// If there was a child then this might error
+		if err != nil && childErr == nil {
+			return err
+		}
+
+		return nil
 	}
 	return nil
 }

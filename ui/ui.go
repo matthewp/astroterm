@@ -8,55 +8,60 @@ import (
 )
 
 type UI struct {
-	app   *tview.Application
-	grid  *tview.Grid
-	pages *tview.Pages
+	app         *tview.Application
+	grid        *tview.Grid
+	menu        *Menu
+	main        *tview.Flex
+	currentMain UISection
+	pages       *tview.Pages
+}
+
+type UISectionType int64
+
+const (
+	SectionDevelopment UISectionType = iota
+	SectionBuild
+	SectionDiagnostics
+)
+
+type UISection interface {
+	Primitive() tview.Primitive
+	Stop() bool
 }
 
 func NewUI() *UI {
 	app := tview.NewApplication()
+	ui := &UI{
+		app: app,
+	}
+
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Rune() == 113 /* q */ {
+			if ui.currentMain != nil {
+				ui.currentMain.Stop()
+			}
+
 			app.Stop()
 			return nil
 		}
 		return event
 	})
 
-	grid := newGrid(app)
-	fc := NewFixedControls()
-	pages := tview.NewPages().
-		AddPage("background", grid, true, true).
-		AddPage("modal", fc, true, true)
+	toolbar := NewToolbar(app)
+	menu := NewMenu(ui)
+	main := tview.NewFlex()
+	ui.menu = menu
+	ui.main = main
 
-	return &UI{
-		app:   app,
-		grid:  grid,
-		pages: pages,
-	}
-}
-
-func newGrid(app *tview.Application) *tview.Grid {
-	newPrimitive := func(text string) tview.Primitive {
-		tv := tview.NewTextView()
-
-		tv.SetTitle(text)
-		tv.SetTitleAlign(tview.AlignLeft)
-		tv.SetBorder(true)
-
-		return tv
-	}
-
-	menu := newPrimitive("Menu")
-	nav := NewMainNav(app)
-	main := NewDevServer(app)
+	defaultMain := NewDevServer(app)
+	ui.SetMainItem(defaultMain)
 
 	cmds := NewBottomCommands(app)
 
 	grid := tview.NewGrid().
 		SetRows(1, 0, 1).
 		SetColumns(30, 0, 30).
-		AddItem(nav, 0, 0, 1, 3, 0, 0, false).
+		AddItem(toolbar, 0, 0, 1, 3, 0, 0, false).
 		AddItem(cmds, 2, 0, 1, 3, 0, 0, false)
 
 	// Layout for screens narrower than 100 cells (menu and side bar are hidden).
@@ -67,7 +72,12 @@ func newGrid(app *tview.Application) *tview.Grid {
 	grid.AddItem(menu, 1, 0, 1, 1, 0, 100, false).
 		AddItem(main, 1, 1, 1, 2, 0, 100, false)
 
-	return grid
+	pages := tview.NewPages().AddPage("background", grid, true, true)
+
+	ui.pages = pages
+	ui.grid = grid
+
+	return ui
 }
 
 func (ui *UI) Start() error {
@@ -80,7 +90,7 @@ func (ui *UI) Start() error {
 	}
 
 	if env.IsAstroProject {
-		app.SetRoot(ui.pages, true).SetFocus(ui.grid).EnableMouse(true)
+		app.SetRoot(ui.pages, true).SetFocus(ui.menu).EnableMouse(true)
 	} else {
 		naModal := notAnAstroAppModal(app)
 		app.SetRoot(naModal, true).SetFocus(naModal).EnableMouse(true)
@@ -90,6 +100,27 @@ func (ui *UI) Start() error {
 		return err
 	}
 	return nil
+}
+
+func (u *UI) Navigate(sec UISectionType) {
+	switch sec {
+	case SectionDevelopment:
+		u.main.RemoveItem(u.currentMain.Primitive())
+		u.SetMainItem(NewDevServer(u.app))
+		break
+	case SectionBuild:
+		u.main.RemoveItem(u.currentMain.Primitive())
+		//u.SetMainItem(NewDevServer(u.app))
+		break
+	case SectionDiagnostics:
+		break
+	}
+}
+
+func (u *UI) SetMainItem(item UISection) {
+	p := item.Primitive()
+	u.main.AddItem(p, 0, 1, false)
+	u.currentMain = item
 }
 
 func notAnAstroAppModal(app *tview.Application) *tview.Modal {
