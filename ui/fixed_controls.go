@@ -6,6 +6,7 @@ import (
 
 type FixedControls struct {
 	*tview.Grid
+	form *tview.Form
 }
 
 func NewFixedControls() *FixedControls {
@@ -13,13 +14,6 @@ func NewFixedControls() *FixedControls {
 	form.SetBorder(true)
 	form.SetTitle("Process")
 
-	/*dForm := tview.NewForm()
-	dForm.SetBorderPadding(0, 0, 0, 0)
-	dForm.SetBorder(false)
-	dForm.SetButtonsAlign(tview.AlignRight)
-
-	dForm.AddButton("Start dev server", nil)
-	dForm.SetButtonBackgroundColor(Styles.ContrastBackgroundColor)*/
 	form.AddButton("Start dev server", nil)
 	form.SetButtonBackgroundColor(Styles.ContrastBackgroundColor)
 	form.SetButtonsAlign(tview.AlignCenter)
@@ -31,5 +25,10 @@ func NewFixedControls() *FixedControls {
 
 	return &FixedControls{
 		Grid: grid,
+		form: form,
 	}
+}
+
+func (f *FixedControls) AddButton(label string, selected func()) {
+	f.form.AddButton(label, selected)
 }

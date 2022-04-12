@@ -24,9 +24,10 @@ func NewUI() *UI {
 	})
 
 	grid := newGrid(app)
+	fc := NewFixedControls()
 	pages := tview.NewPages().
 		AddPage("background", grid, true, true).
-		AddPage("modal", NewFixedControls(), true, true)
+		AddPage("modal", fc, true, true)
 
 	return &UI{
 		app:   app,
@@ -50,11 +51,13 @@ func newGrid(app *tview.Application) *tview.Grid {
 	nav := NewMainNav(app)
 	main := NewDevServer(app)
 
+	cmds := NewBottomCommands(app)
+
 	grid := tview.NewGrid().
 		SetRows(1, 0, 1).
 		SetColumns(30, 0, 30).
 		AddItem(nav, 0, 0, 1, 3, 0, 0, false).
-		AddItem(newPrimitive("Footer"), 2, 0, 1, 3, 0, 0, false)
+		AddItem(cmds, 2, 0, 1, 3, 0, 0, false)
 
 	// Layout for screens narrower than 100 cells (menu and side bar are hidden).
 	grid.AddItem(menu, 0, 0, 0, 0, 0, 0, false).

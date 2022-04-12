@@ -39,7 +39,9 @@ var Styles = tview.Theme{
 var NavStyles = struct {
 	BackgroundColor tcell.Color
 	TextColor       tcell.Color
+	TextHotKeyColor tcell.Color
 }{
 	tcell.ColorLightGray,
-	tcell.ColorBlack,
+	tcell.ColorBlack.TrueColor(),
+	tcell.NewRGBColor(190, 0, 0),
 }
