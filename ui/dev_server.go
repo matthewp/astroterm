@@ -97,6 +97,9 @@ func NewDevServer(app *tview.Application) *DevServerUI {
 			form.SetButtonBackgroundColor(tcell.ColorDarkRed)
 		} else {
 			devServer.killServer()
+			state.hostname = ""
+			state.port = 0
+			devServer.setOverviewInformation()
 		}
 	})
 	MakeToggleableButton(btn, form, app)
@@ -117,9 +120,8 @@ func (ds *DevServerUI) Primitive() tview.Primitive {
 	return ds.Flex
 }
 
-func (ds *DevServerUI) Stop() bool {
+func (ds *DevServerUI) Stop() {
 	ds.killServer()
-	return true
 }
 
 func (ds *DevServerUI) Write(p []byte) (int, error) {

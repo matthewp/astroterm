@@ -21,12 +21,13 @@ type UISectionType int64
 const (
 	SectionDevelopment UISectionType = iota
 	SectionBuild
+	SectionIntegrations
 	SectionDiagnostics
 )
 
 type UISection interface {
 	Primitive() tview.Primitive
-	Stop() bool
+	Stop()
 }
 
 func NewUI() *UI {
@@ -110,9 +111,14 @@ func (u *UI) Navigate(sec UISectionType) {
 		break
 	case SectionBuild:
 		u.main.RemoveItem(u.currentMain.Primitive())
-		//u.SetMainItem(NewDevServer(u.app))
+		u.SetMainItem(NewBuildUI())
+		break
+	case SectionIntegrations:
+		u.main.RemoveItem(u.currentMain.Primitive())
+		u.SetMainItem(NewIntegrationsUI())
 		break
 	case SectionDiagnostics:
+		u.main.RemoveItem(u.currentMain.Primitive())
 		break
 	}
 }

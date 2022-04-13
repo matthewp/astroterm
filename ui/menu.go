@@ -14,7 +14,8 @@ func NewMenu(u *UI) *Menu {
 	list := tview.NewList().
 		AddItem("Development", "", 'd', nil).
 		AddItem("Build", "", 'b', nil).
-		AddItem("Diagnostics", "", 'i', nil)
+		AddItem("Integrations", "", 'i', nil).
+		AddItem("Diagnostics", "", 'n', nil)
 		//AddItem("List item 4", "Some explanatory text", 'd', nil)
 	list.SetBorder(true)
 	list.SetTitle("Menu")
@@ -41,6 +42,9 @@ func NewMenu(u *UI) *Menu {
 			u.Navigate(SectionBuild)
 			break
 		case 2:
+			u.Navigate(SectionIntegrations)
+			break
+		case 3:
 			u.Navigate(SectionDiagnostics)
 			break
 		}
