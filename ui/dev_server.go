@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"astroterm/astro"
+	"astroterm/db"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -15,32 +16,24 @@ import (
 
 type DevServerUI struct {
 	Flex  *tview.Flex
-	app   *tview.Application
+	ui    *UI
 	logs  *tview.TextView
 	ovw   *tview.TextView
 	state *serverState
 }
 
 type serverState struct {
-	running  bool
-	proc     *os.Process
-	pid      int
-	hostname string
-	port     int
+	running bool
 }
 
 var portMatch = regexp.MustCompile("(localhost|127.0.0.1):([0-9]{4})\\/")
 
-func NewDevServer(app *tview.Application) *DevServerUI {
+func NewDevServer(u *UI) *DevServerUI {
 	flex := tview.NewFlex()
 	flex.SetDirection(tview.FlexRow)
 
 	state := &serverState{
-		running:  false,
-		proc:     nil,
-		pid:      0,
-		port:     0,
-		hostname: "",
+		running: false,
 	}
 
 	logs := tview.NewTextView()
@@ -48,7 +41,7 @@ func NewDevServer(app *tview.Application) *DevServerUI {
 	logs.SetTitleAlign(tview.AlignLeft)
 	logs.SetBorder(true)
 	logs.SetChangedFunc(func() {
-		app.Draw()
+		u.Draw()
 	})
 
 	// The Info Section
@@ -69,40 +62,38 @@ func NewDevServer(app *tview.Application) *DevServerUI {
 
 	devServer := &DevServerUI{
 		Flex:  flex,
-		app:   app,
+		ui:    u,
 		logs:  logs,
 		ovw:   ovw,
 		state: state,
 	}
+	devServer.LoadDeverServerModel()
 
 	var btn *tview.Button
 	form := tview.NewForm()
-	form.AddButton("Start", nil)
+	form.AddButton("Start server", nil)
 	form.SetButtonBackgroundColor(Styles.ContrastBackgroundColor)
 	form.SetButtonsAlign(tview.AlignCenter)
 	btn = form.GetButton(0)
 	btn.SetSelectedFunc(func() {
 		var label string
 		if state.running {
-			label = "Start"
+			label = "Start server"
 		} else {
-			label = "Stop"
+			label = "Stop server"
 		}
 		btn.SetLabel(label)
 		state.running = !state.running
-		app.SetFocus(flex)
+		u.SetFocus(flex)
 
 		if state.running {
 			devServer.startServer()
 			form.SetButtonBackgroundColor(tcell.ColorDarkRed)
 		} else {
-			devServer.killServer()
-			state.hostname = ""
-			state.port = 0
-			devServer.setOverviewInformation()
+			devServer.shutdownServer(true)
 		}
 	})
-	MakeToggleableButton(btn, form, app)
+	MakeToggleableButton(btn, form, u)
 
 	info.AddItem(ovwf, 0, 1, false)
 	info.AddItem(form, 0, 1, false)
@@ -121,11 +112,11 @@ func (ds *DevServerUI) Primitive() tview.Primitive {
 }
 
 func (ds *DevServerUI) Stop() {
-	ds.killServer()
+	ds.shutdownServer(false)
 }
 
 func (ds *DevServerUI) Write(p []byte) (int, error) {
-	if ds.state.port == 0 {
+	if ds.Model().Port == 0 {
 		ds.parseHostInformation(p)
 	}
 	return ds.logs.Write(p)
@@ -136,20 +127,24 @@ func (ds *DevServerUI) parseHostInformation(p []byte) {
 	rs := portMatch.FindStringSubmatch(part)
 	if len(rs) > 1 {
 		portString := rs[2]
-		ds.state.port, _ = strconv.Atoi(portString)
-		ds.state.hostname = rs[1]
+		ds.Model().Port, _ = strconv.Atoi(portString)
+		ds.Model().Hostname = rs[1]
 		ds.setOverviewInformation()
+		err := ds.ui.db.SetDevServerInformation(ds.Model())
+		if err != nil {
+			ds.logs.Write([]byte(err.Error()))
+		}
 	}
 }
 
 func (ds *DevServerUI) setOverviewInformation() {
-	state := ds.state
+	model := ds.Model()
 
 	var msg string
-	if state.hostname == "" {
+	if model.Hostname == "" {
 		msg = "No server running"
 	} else {
-		msg = fmt.Sprintf("Listening at http://%s:%v", state.hostname, state.port)
+		msg = fmt.Sprintf("Listening at http://%s:%v", model.Hostname, model.Port)
 	}
 	ds.ovw.SetText(msg)
 }
@@ -159,30 +154,60 @@ func (ds *DevServerUI) startServer() error {
 	if err != nil {
 		return err
 	}
-	ds.state.proc = cmd.Process
-	ds.state.pid = cmd.Process.Pid
+	ds.Model().Pid = cmd.Process.Pid
+	ds.ui.db.AddStartedDevServer(ds.Model()) // TODO change
 	return nil
 }
 
+func (ds *DevServerUI) shutdownServer(updateUI bool) error {
+	e1 := ds.killServer()
+	ds.Model().Hostname = ""
+	ds.Model().Port = 0
+	if updateUI {
+		ds.setOverviewInformation()
+	}
+	e2 := ds.ui.db.DeleteDevServer(ds.Model())
+
+	if e1 != nil {
+		return e1
+	}
+	return e2
+}
+
 func (ds *DevServerUI) killServer() error {
-	state := ds.state
-	if state.proc != nil {
-		childPid := state.pid + 1
-		childProc, childErr := os.FindProcess(childPid)
-		if childErr == nil {
-			childProc.Signal(syscall.SIGKILL)
-			childProc.Wait()
+	if ds.Model().Pid != 0 {
+		err1 := KillPid(ds.Model().Pid + 1)
+		err2 := KillPid(ds.Model().Pid)
+
+		if err1 != nil {
+			return err1
 		}
-
-		err := state.proc.Signal(syscall.SIGKILL)
-		state.proc.Wait()
-
-		// If there was a child then this might error
-		if err != nil && childErr == nil {
-			return err
-		}
-
-		return nil
+		return err2
 	}
 	return nil
+}
+
+func KillPid(pid int) error {
+	proc, err := os.FindProcess(pid)
+	if err == nil {
+		proc.Signal(syscall.SIGKILL)
+		proc.Wait()
+	}
+	return err
+}
+
+func (ds *DevServerUI) Model() *db.DevServerModel {
+	return ds.ui.DevModel
+}
+
+func (ds *DevServerUI) LoadDeverServerModel() {
+	projectDir := ds.ui.CurrentProject.Name()
+	model, err := ds.ui.db.LoadDeverServerModel(projectDir)
+	if err != nil {
+		return
+	}
+
+	if model != nil {
+		ds.ui.DevModel = model
+	}
 }
