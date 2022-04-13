@@ -1,7 +1,10 @@
 package ui
 
 import (
+	"fmt"
 	"os"
+	"regexp"
+	"strconv"
 	"syscall"
 
 	"astroterm/astro"
@@ -13,47 +16,70 @@ import (
 type DevServerUI struct {
 	Flex  *tview.Flex
 	app   *tview.Application
-	tv    *tview.TextView
+	logs  *tview.TextView
+	ovw   *tview.TextView
 	state *serverState
 }
 
 type serverState struct {
-	running bool
-	proc    *os.Process
-	pid     int
+	running  bool
+	proc     *os.Process
+	pid      int
+	hostname string
+	port     int
 }
+
+var portMatch = regexp.MustCompile("(localhost|127.0.0.1):([0-9]{4})\\/")
 
 func NewDevServer(app *tview.Application) *DevServerUI {
 	flex := tview.NewFlex()
 	flex.SetDirection(tview.FlexRow)
 
 	state := &serverState{
-		running: false,
-		proc:    nil,
+		running:  false,
+		proc:     nil,
+		pid:      0,
+		port:     0,
+		hostname: "",
 	}
 
-	tv := tview.NewTextView()
-	tv.SetTitle("Logs")
-	tv.SetTitleAlign(tview.AlignLeft)
-	tv.SetBorder(true)
-	tv.SetChangedFunc(func() {
+	logs := tview.NewTextView()
+	logs.SetTitle("Logs")
+	logs.SetTitleAlign(tview.AlignLeft)
+	logs.SetBorder(true)
+	logs.SetChangedFunc(func() {
 		app.Draw()
 	})
+
+	// The Info Section
+	info := tview.NewFlex()
+	info.SetTitle("Info")
+	info.SetTitleAlign(tview.AlignLeft)
+	info.SetBorder(true)
+	info.SetBorderPadding(0, 0, 1, 1)
+
+	// Overview info
+	ovwf := tview.NewFlex()
+	ovwf.SetDirection(tview.FlexRow)
+
+	ovw := tview.NewTextView()
+	ovwf.AddItem(nil, 0, 1, false).
+		AddItem(ovw, 0, 1, false).
+		AddItem(nil, 0, 1, false)
 
 	devServer := &DevServerUI{
 		Flex:  flex,
 		app:   app,
-		tv:    tv,
+		logs:  logs,
+		ovw:   ovw,
 		state: state,
 	}
 
 	var btn *tview.Button
 	form := tview.NewForm()
-	form.SetTitle("Info")
-	form.SetTitleAlign(tview.AlignLeft)
-	form.SetBorder(true)
 	form.AddButton("Start", nil)
 	form.SetButtonBackgroundColor(Styles.ContrastBackgroundColor)
+	form.SetButtonsAlign(tview.AlignCenter)
 	btn = form.GetButton(0)
 	btn.SetSelectedFunc(func() {
 		var label string
@@ -74,8 +100,15 @@ func NewDevServer(app *tview.Application) *DevServerUI {
 		}
 	})
 	MakeToggleableButton(btn, form, app)
-	flex.AddItem(form, 5, 0, false)
-	flex.AddItem(tv, 0, 1, false)
+
+	info.AddItem(ovwf, 0, 1, false)
+	info.AddItem(form, 0, 1, false)
+
+	flex.AddItem(info, 5, 0, false)
+	flex.AddItem(logs, 0, 1, false)
+
+	// Set initial state
+	devServer.setOverviewInformation()
 
 	return devServer
 }
@@ -89,8 +122,38 @@ func (ds *DevServerUI) Stop() bool {
 	return true
 }
 
+func (ds *DevServerUI) Write(p []byte) (int, error) {
+	if ds.state.port == 0 {
+		ds.parseHostInformation(p)
+	}
+	return ds.logs.Write(p)
+}
+
+func (ds *DevServerUI) parseHostInformation(p []byte) {
+	part := string(p)
+	rs := portMatch.FindStringSubmatch(part)
+	if len(rs) > 1 {
+		portString := rs[2]
+		ds.state.port, _ = strconv.Atoi(portString)
+		ds.state.hostname = rs[1]
+		ds.setOverviewInformation()
+	}
+}
+
+func (ds *DevServerUI) setOverviewInformation() {
+	state := ds.state
+
+	var msg string
+	if state.hostname == "" {
+		msg = "No server running"
+	} else {
+		msg = fmt.Sprintf("Listening at http://%s:%v", state.hostname, state.port)
+	}
+	ds.ovw.SetText(msg)
+}
+
 func (ds *DevServerUI) startServer() error {
-	cmd, err := astro.RunCommand(astro.Dev, ds.tv)
+	cmd, err := astro.RunCommand(astro.Dev, ds)
 	if err != nil {
 		return err
 	}
