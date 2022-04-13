@@ -118,7 +118,10 @@ func (ui *UI) Start() error {
 func (u *UI) Navigate(sec UISectionType) {
 	newSec := u.LoadSection(sec)
 	u.main.RemoveItem(u.currentMain.Primitive())
-	u.SetMainItem(newSec)
+	if newSec != nil {
+		u.SetMainItem(newSec)
+	}
+
 }
 
 func (u *UI) LoadSection(sec UISectionType) UISection {
@@ -182,12 +185,4 @@ func notAnAstroAppModal(app *tview.Application) *tview.Modal {
 			}
 		})
 	return modal
-}
-
-func otherStuff() {
-	box := tview.NewBox().SetBorder(true).SetTitle("Commands")
-
-	if err := tview.NewApplication().SetRoot(box, true).Run(); err != nil {
-		panic(err)
-	}
 }
