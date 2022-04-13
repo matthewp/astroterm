@@ -1,19 +1,27 @@
 package ui
 
 import (
+	"astroterm/db"
 	aenv "astroterm/env"
+	"astroterm/project"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
 type UI struct {
+	DevModel       *db.DevServerModel
+	CurrentProject *project.Project
+
+	db          *db.Database
 	app         *tview.Application
 	grid        *tview.Grid
 	menu        *Menu
 	main        *tview.Flex
 	currentMain UISection
 	pages       *tview.Pages
+
+	sections map[UISectionType]UISection
 }
 
 type UISectionType int64
@@ -33,7 +41,11 @@ type UISection interface {
 func NewUI() *UI {
 	app := tview.NewApplication()
 	ui := &UI{
-		app: app,
+		DevModel:       &db.DevServerModel{},
+		CurrentProject: loadLocalProject(),
+		app:            app,
+		db:             db.NewDatabase(),
+		sections:       make(map[UISectionType]UISection),
 	}
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -54,7 +66,7 @@ func NewUI() *UI {
 	ui.menu = menu
 	ui.main = main
 
-	defaultMain := NewDevServer(app)
+	defaultMain := ui.LoadSection(SectionDevelopment)
 	ui.SetMainItem(defaultMain)
 
 	cmds := NewBottomCommands(app)
@@ -104,29 +116,60 @@ func (ui *UI) Start() error {
 }
 
 func (u *UI) Navigate(sec UISectionType) {
+	newSec := u.LoadSection(sec)
+	u.main.RemoveItem(u.currentMain.Primitive())
+	u.SetMainItem(newSec)
+}
+
+func (u *UI) LoadSection(sec UISectionType) UISection {
+	sections := u.sections
+	if val, ok := sections[sec]; ok {
+		return val
+	}
+	var val UISection
 	switch sec {
 	case SectionDevelopment:
-		u.main.RemoveItem(u.currentMain.Primitive())
-		u.SetMainItem(NewDevServer(u.app))
+		val = NewDevServer(u)
 		break
 	case SectionBuild:
-		u.main.RemoveItem(u.currentMain.Primitive())
-		u.SetMainItem(NewBuildUI())
+		val = NewBuildUI()
 		break
 	case SectionIntegrations:
-		u.main.RemoveItem(u.currentMain.Primitive())
-		u.SetMainItem(NewIntegrationsUI())
+		val = NewIntegrationsUI()
 		break
 	case SectionDiagnostics:
-		u.main.RemoveItem(u.currentMain.Primitive())
+		val = nil
 		break
+	default:
+		val = nil
 	}
+	if val != nil {
+		sections[sec] = val
+	}
+	return val
 }
 
 func (u *UI) SetMainItem(item UISection) {
 	p := item.Primitive()
 	u.main.AddItem(p, 0, 1, false)
 	u.currentMain = item
+}
+
+func (u *UI) Draw() *tview.Application {
+	return u.app.Draw()
+}
+
+func (u *UI) SetFocus(p tview.Primitive) *tview.Application {
+	return u.app.SetFocus(p)
+}
+
+func loadLocalProject() *project.Project {
+	var localProject *project.Project
+	localProject, err := project.OpenLocalProject()
+	if err != nil {
+		localProject = project.NewProject()
+	}
+	return localProject
 }
 
 func notAnAstroAppModal(app *tview.Application) *tview.Modal {
