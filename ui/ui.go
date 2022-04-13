@@ -61,6 +61,7 @@ func NewUI() *UI {
 	})
 
 	toolbar := NewToolbar(app)
+	toolbar.SetProject(ui.CurrentProject)
 	menu := NewMenu(ui)
 	main := tview.NewFlex()
 	ui.menu = menu

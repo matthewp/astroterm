@@ -33,8 +33,8 @@ func OpenLocalProject() (*Project, error) {
 }
 
 func (p *Project) Name() string {
-	if p.pkg != nil {
+	if p.pkg == nil {
 		return "unknown"
 	}
-	return p.pkg.name
+	return p.pkg.Name
 }

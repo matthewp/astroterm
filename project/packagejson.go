@@ -8,8 +8,8 @@ import (
 )
 
 type PackageJson struct {
-	name string
-	deps map[string]string
+	Name         string
+	Dependencies map[string]string
 }
 
 func OpenPackageJson(env *aenv.TermEnvironment) (*PackageJson, error) {
@@ -22,6 +22,7 @@ func OpenPackageJson(env *aenv.TermEnvironment) (*PackageJson, error) {
 
 	pkg := &PackageJson{}
 	err = json.Unmarshal(bytes, pkg)
+
 	if err != nil {
 		return nil, err
 	}
