@@ -7,7 +7,8 @@ import (
 
 type Menu struct {
 	*tview.List
-	ui *UI
+	ui           *UI
+	focusSection func()
 }
 
 func NewMenu(u *UI) *Menu {
@@ -23,16 +24,12 @@ func NewMenu(u *UI) *Menu {
 	list.ShowSecondaryText(false)
 	list.SetHighlightFullLine(true)
 
-	list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch key := event.Key(); key {
-		case tcell.KeyTab:
-			return nil
-		case tcell.KeyBacktab:
-			return nil
-		}
-		return event
-	})
+	menu := &Menu{
+		List: list,
+		ui:   u,
+	}
 
+	list.SetInputCapture(menu.onInputCapture)
 	list.SetChangedFunc(func(idx int, mainText string, secondaryText string, shortcut rune) {
 		switch idx {
 		case 0:
@@ -50,8 +47,22 @@ func NewMenu(u *UI) *Menu {
 		}
 	})
 
-	return &Menu{
-		List: list,
-		ui:   u,
+	return menu
+}
+
+func (m *Menu) SetFocusSection(onfocus func()) {
+	m.focusSection = onfocus
+}
+
+func (m *Menu) onInputCapture(event *tcell.EventKey) *tcell.EventKey {
+	switch key := event.Key(); key {
+	case tcell.KeyTab:
+		return nil
+	case tcell.KeyBacktab:
+		return nil
+	case tcell.KeyRight:
+		m.focusSection()
+		return nil
 	}
+	return event
 }

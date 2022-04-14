@@ -15,11 +15,12 @@ import (
 )
 
 type DevServerUI struct {
-	Flex  *tview.Flex
-	ui    *UI
-	logs  *tview.TextView
-	ovw   *tview.TextView
-	state *serverState
+	Flex      *tview.Flex
+	ui        *UI
+	logs      *tview.TextView
+	ovw       *tview.TextView
+	state     *serverState
+	focusMenu func()
 }
 
 type serverState struct {
@@ -29,8 +30,16 @@ type serverState struct {
 var portMatch = regexp.MustCompile("(localhost|127.0.0.1):([0-9]{4})\\/")
 
 func NewDevServer(u *UI) *DevServerUI {
+	var devServer *DevServerUI
+	var info *tview.Flex
+	// Start server button
+	var btn *tview.Button
+
 	flex := tview.NewFlex()
 	flex.SetDirection(tview.FlexRow)
+	flex.SetFocusFunc(func() {
+		u.SetFocus(info)
+	})
 
 	state := &serverState{
 		running: false,
@@ -43,13 +52,40 @@ func NewDevServer(u *UI) *DevServerUI {
 	logs.SetChangedFunc(func() {
 		u.Draw()
 	})
+	logs.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch key := event.Key(); key {
+		case tcell.KeyLeft:
+			devServer.focusMenu()
+			return nil
+		case tcell.KeyUp:
+			u.SetFocus(info)
+			return nil
+		}
+		return event
+	})
 
 	// The Info Section
-	info := tview.NewFlex()
+	info = tview.NewFlex()
 	info.SetTitle("Info")
 	info.SetTitleAlign(tview.AlignLeft)
 	info.SetBorder(true)
 	info.SetBorderPadding(0, 0, 1, 1)
+	info.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch key := event.Key(); key {
+		case tcell.KeyLeft:
+			devServer.focusMenu()
+			return nil
+		case tcell.KeyDown:
+			u.SetFocus(logs)
+			return nil
+		case tcell.KeyTab:
+			u.SetFocus(btn)
+			return nil
+		}
+
+		return event
+
+	})
 
 	// Overview info
 	ovwf := tview.NewFlex()
@@ -60,7 +96,7 @@ func NewDevServer(u *UI) *DevServerUI {
 		AddItem(ovw, 0, 1, false).
 		AddItem(nil, 0, 1, false)
 
-	devServer := &DevServerUI{
+	devServer = &DevServerUI{
 		Flex:  flex,
 		ui:    u,
 		logs:  logs,
@@ -72,7 +108,6 @@ func NewDevServer(u *UI) *DevServerUI {
 		state.running = true
 	}
 
-	var btn *tview.Button
 	form := tview.NewForm()
 	form.AddButton("Start server", nil)
 	form.SetButtonBackgroundColor(Styles.ContrastBackgroundColor)
@@ -118,6 +153,10 @@ func (ds *DevServerUI) Write(p []byte) (int, error) {
 		ds.parseHostInformation(p)
 	}
 	return ds.logs.Write(p)
+}
+
+func (ds *DevServerUI) SetFocusMenu(focusMenu func()) {
+	ds.focusMenu = focusMenu
 }
 
 func (ds *DevServerUI) parseHostInformation(p []byte) {

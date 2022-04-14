@@ -36,6 +36,7 @@ const (
 type UISection interface {
 	Primitive() tview.Primitive
 	Stop()
+	SetFocusMenu(func())
 }
 
 func NewUI() *UI {
@@ -61,6 +62,11 @@ func NewUI() *UI {
 	toolbar := NewToolbar(app)
 	toolbar.SetProject(ui.CurrentProject)
 	menu := NewMenu(ui)
+	menu.SetFocusSection(func() {
+		if ui.currentMain != nil {
+			ui.app.SetFocus(ui.currentMain.Primitive())
+		}
+	})
 	main := tview.NewFlex()
 	ui.menu = menu
 	ui.main = main
@@ -173,6 +179,7 @@ func (u *UI) LoadSection(sec UISectionType) UISection {
 		val = nil
 	}
 	if val != nil {
+		val.SetFocusMenu(u.focusMenu)
 		sections[sec] = val
 	}
 	return val
@@ -190,6 +197,10 @@ func (u *UI) Draw() *tview.Application {
 
 func (u *UI) SetFocus(p tview.Primitive) *tview.Application {
 	return u.app.SetFocus(p)
+}
+
+func (u *UI) focusMenu() {
+	u.app.SetFocus(u.menu)
 }
 
 func loadLocalProject() *project.Project {

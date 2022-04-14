@@ -30,3 +30,7 @@ func (b *BuildUI) Primitive() tview.Primitive {
 }
 
 func (b *BuildUI) Stop() {}
+
+func (b *BuildUI) SetFocusMenu(focusMenu func()) {
+
+}

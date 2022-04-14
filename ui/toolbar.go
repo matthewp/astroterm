@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/lucasb-eyer/go-colorful"
 	"github.com/rivo/tview"
 )
 
@@ -13,16 +14,6 @@ type Toolbar struct {
 	app      *tview.Application
 	titlebar *tview.TextView
 }
-
-var titleColors = []tcell.Color{
-	tcell.NewRGBColor(199, 186, 185),
-	tcell.NewRGBColor(29, 34, 40),
-	tcell.NewRGBColor(114, 65, 65),
-	tcell.NewRGBColor(118, 168, 176),
-	tcell.NewRGBColor(102, 133, 159),
-}
-
-const pulsateDuration = 300
 
 func NewToolbar(app *tview.Application) *Toolbar {
 	flex := tview.NewFlex()
@@ -51,11 +42,28 @@ func NewToolbar(app *tview.Application) *Toolbar {
 		titlebar: titlebar,
 	}
 
-	//go pulsateTitle(t, 0, true)
+	go pulsateTitle(t, getColors(), 0, true)
 	return t
 }
 
-func pulsateTitle(t *Toolbar, idx int, forward bool) {
+const pulsateDuration = 50
+
+func getColors() []tcell.Color {
+	c1, _ := colorful.Hex("#cc2b5e")
+	c2, _ := colorful.Hex("#753a88")
+
+	blocks := 50
+	colors := make([]tcell.Color, blocks)
+
+	for i := 0; i < blocks; i++ {
+		c := c1.BlendRgb(c2, float64(i)/float64(blocks-1))
+		r, g, b := c.RGB255()
+		colors[i] = tcell.NewRGBColor(int32(r), int32(g), int32(b))
+	}
+	return colors
+}
+
+func pulsateTitle(t *Toolbar, titleColors []tcell.Color, idx int, forward bool) {
 	color := titleColors[idx]
 	t.titlebar.SetTextColor(color)
 	t.app.Draw()
@@ -77,7 +85,7 @@ func pulsateTitle(t *Toolbar, idx int, forward bool) {
 			nidx = idx - 1
 		}
 	}
-	pulsateTitle(t, nidx, nf)
+	pulsateTitle(t, titleColors, nidx, nf)
 }
 
 func (t *Toolbar) SetProject(p *project.Project) {

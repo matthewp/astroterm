@@ -30,3 +30,7 @@ func (b *IntegrationsUI) Primitive() tview.Primitive {
 }
 
 func (b *IntegrationsUI) Stop() {}
+
+func (b *IntegrationsUI) SetFocusMenu(focusMenu func()) {
+
+}
