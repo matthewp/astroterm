@@ -204,13 +204,14 @@ func (ds *DevServerUI) startServer() error {
 
 func (ds *DevServerUI) shutdownServer(updateUI bool) error {
 	e1 := ds.killServer()
-	ds.Model().Pid = 0
 	ds.Model().Hostname = ""
 	ds.Model().Port = 0
 	if updateUI {
 		ds.setOverviewInformation()
 	}
 	e2 := ds.ui.db.DeleteDevServer(ds.Model())
+	// This must happen after the model is deleted from the database
+	ds.Model().Pid = 0
 
 	if e1 != nil {
 		return e1
