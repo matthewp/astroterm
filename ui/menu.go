@@ -57,6 +57,7 @@ func (m *Menu) SetFocusSection(onfocus func()) {
 func (m *Menu) onInputCapture(event *tcell.EventKey) *tcell.EventKey {
 	switch key := event.Key(); key {
 	case tcell.KeyTab:
+		m.focusSection()
 		return nil
 	case tcell.KeyBacktab:
 		return nil

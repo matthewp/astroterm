@@ -199,6 +199,10 @@ func (u *UI) SetFocus(p tview.Primitive) *tview.Application {
 	return u.app.SetFocus(p)
 }
 
+func (u *UI) GetFocus() tview.Primitive {
+	return u.app.GetFocus()
+}
+
 func (u *UI) focusMenu() {
 	u.app.SetFocus(u.menu)
 }

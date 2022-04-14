@@ -58,6 +58,7 @@ func NewDevServer(u *UI) *DevServerUI {
 			devServer.focusMenu()
 			return nil
 		case tcell.KeyUp:
+		case tcell.KeyBacktab:
 			u.SetFocus(info)
 			return nil
 		}
@@ -73,13 +74,18 @@ func NewDevServer(u *UI) *DevServerUI {
 	info.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch key := event.Key(); key {
 		case tcell.KeyLeft:
+		case tcell.KeyBacktab:
 			devServer.focusMenu()
 			return nil
 		case tcell.KeyDown:
 			u.SetFocus(logs)
 			return nil
 		case tcell.KeyTab:
-			u.SetFocus(btn)
+			if u.GetFocus() == btn {
+				u.SetFocus(logs)
+			} else {
+				u.SetFocus(btn)
+			}
 			return nil
 		}
 
