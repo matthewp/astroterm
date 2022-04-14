@@ -204,6 +204,7 @@ func (ds *DevServerUI) startServer() error {
 
 func (ds *DevServerUI) shutdownServer(updateUI bool) error {
 	e1 := ds.killServer()
+	ds.Model().Pid = 0
 	ds.Model().Hostname = ""
 	ds.Model().Port = 0
 	if updateUI {
