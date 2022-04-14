@@ -20,6 +20,11 @@ jobs:
             goos: windows
     steps:
     - uses: actions/checkout@v2
+    - name: Set up GCC
+      uses: egor-tensin/setup-gcc@v1
+      with:
+        version: latest
+        platform: x64
     - uses: wangyoucao577/go-release-action@v1.25
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
