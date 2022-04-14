@@ -68,6 +68,9 @@ func NewDevServer(u *UI) *DevServerUI {
 		state: state,
 	}
 	devServer.LoadDeverServerModel()
+	if devServer.Model().Pid != 0 {
+		state.running = true
+	}
 
 	var btn *tview.Button
 	form := tview.NewForm()
@@ -75,20 +78,15 @@ func NewDevServer(u *UI) *DevServerUI {
 	form.SetButtonBackgroundColor(Styles.ContrastBackgroundColor)
 	form.SetButtonsAlign(tview.AlignCenter)
 	btn = form.GetButton(0)
+	SetButtonState(state, btn, form)
+
 	btn.SetSelectedFunc(func() {
-		var label string
-		if state.running {
-			label = "Start server"
-		} else {
-			label = "Stop server"
-		}
-		btn.SetLabel(label)
 		state.running = !state.running
+		SetButtonState(state, btn, form)
 		u.SetFocus(flex)
 
 		if state.running {
 			devServer.startServer()
-			form.SetButtonBackgroundColor(tcell.ColorDarkRed)
 		} else {
 			devServer.shutdownServer(true)
 		}
@@ -201,13 +199,26 @@ func (ds *DevServerUI) Model() *db.DevServerModel {
 }
 
 func (ds *DevServerUI) LoadDeverServerModel() {
-	projectDir := ds.ui.CurrentProject.Name()
+	projectDir := ds.ui.CurrentProject.Dir
 	model, err := ds.ui.db.LoadDeverServerModel(projectDir)
 	if err != nil {
+		ds.ui.DevModel.ProjectDir = projectDir
 		return
 	}
-
 	if model != nil {
 		ds.ui.DevModel = model
+	} else {
+		ds.ui.DevModel.ProjectDir = projectDir
 	}
+}
+
+func SetButtonState(state *serverState, btn *tview.Button, form *tview.Form) {
+	if state.running {
+		btn.SetLabel("Stop server")
+		form.SetButtonBackgroundColor(tcell.ColorDarkRed)
+	} else {
+		btn.SetLabel("Start server")
+		form.SetButtonBackgroundColor(Styles.ContrastBackgroundColor)
+	}
+
 }

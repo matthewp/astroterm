@@ -1,8 +1,6 @@
 package db
 
 import (
-	"fmt"
-
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -17,11 +15,18 @@ func (d *Database) LoadDeverServerModel(projectDir string) (*DevServerModel, err
 	if err := d.ensureOpened(); err != nil {
 		return nil, err
 	}
-	r, err := d.db.Exec("SELECT * FROM devservers WHERE projectdir = ?;", projectDir)
+	stmt, err := d.db.Prepare("SELECT pid, hostname, port, projectdir FROM devservers WHERE projectdir = ?;")
+	if err != nil {
+	}
+	defer stmt.Close()
 
-	fmt.Printf("%v", r)
-
-	return nil, err
+	model := &DevServerModel{}
+	row := stmt.QueryRow(projectDir)
+	err = row.Scan(&model.Pid, &model.Hostname, &model.Port, &model.ProjectDir)
+	if model.Pid == 0 {
+		return nil, err
+	}
+	return model, err
 }
 
 func (d *Database) AddStartedDevServer(model *DevServerModel) error {

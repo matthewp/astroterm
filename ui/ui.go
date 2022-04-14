@@ -50,11 +50,9 @@ func NewUI() *UI {
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Rune() == 113 /* q */ {
-			if ui.currentMain != nil {
-				ui.currentMain.Stop()
+			if ui.MaybeStop() {
+				app.Stop()
 			}
-
-			app.Stop()
 			return nil
 		}
 		return event
@@ -86,8 +84,7 @@ func NewUI() *UI {
 	grid.AddItem(menu, 1, 0, 1, 1, 0, 100, false).
 		AddItem(main, 1, 1, 1, 2, 0, 100, false)
 
-	pages := tview.NewPages().AddPage("background", grid, true, true)
-
+	pages := tview.NewPages().AddPage("grid", grid, true, true)
 	ui.pages = pages
 	ui.grid = grid
 
@@ -114,6 +111,34 @@ func (ui *UI) Start() error {
 		return err
 	}
 	return nil
+}
+
+func (ui *UI) MaybeStop() bool {
+	var devServerRunning bool = ui.DevModel.Pid != 0
+	if devServerRunning {
+		app := ui.app
+		pages := ui.pages
+		modal := tview.NewModal().
+			SetText("The [::b]dev server[-:-:-] is running. Would you like to stop it?").
+			AddButtons([]string{"Stop server", "Just quit", "Cancel"}).
+			SetDoneFunc(func(idx int, label string) {
+				switch idx {
+				case 0:
+					ui.LoadSection(SectionDevelopment).Stop()
+					app.Stop()
+					break
+				case 1:
+					app.Stop()
+				case 2:
+					pages.RemovePage("modal")
+					pages.SwitchToPage("grid")
+				}
+			})
+		pages.AddPage("modal", modal, true, true)
+		pages.SwitchToPage("modal")
+		return false
+	}
+	return true
 }
 
 func (u *UI) Navigate(sec UISectionType) {
