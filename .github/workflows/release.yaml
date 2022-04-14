@@ -20,11 +20,24 @@ jobs:
             goos: windows
     steps:
     - uses: actions/checkout@v2
-    - uses: wangyoucao577/go-release-action@v1.25
+    # - uses: wangyoucao577/go-release-action@v1.25
+    #   with:
+    #     github_token: ${{ secrets.GITHUB_TOKEN }}
+    #     goos: ${{ matrix.goos }}
+    #     goarch: ${{ matrix.goarch }}
+    #     goversion: "https://dl.google.com/go/go1.18.linux-amd64.tar.gz"
+    #     extra_files: LICENSE README.md
+    #     ldflags: -X 'astroterm/version.Version=${{ github.event.release.tag_name }}'
+    - name: Build with xgo
+      uses: crazy-max/ghaction-xgo@v1
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        goos: ${{ matrix.goos }}
-        goarch: ${{ matrix.goarch }}
-        goversion: "https://dl.google.com/go/go1.18.linux-amd64.tar.gz"
-        extra_files: LICENSE README.md
-        ldflags: -X 'astroterm/version.Version=${{ github.event.release.tag_name }}'
+        xgo_version: latest
+        go_version: ${{ matrix.go_version }}
+        dest: build
+        prefix: myapp
+        targets: windows/386,windows/amd64,linux/386,linux/amd64,darwin/arm64,darwin/amd64
+        v: true
+        x: false
+        race: false
+        ldflags: -s -w
+        buildmode: default
