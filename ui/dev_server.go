@@ -22,6 +22,7 @@ type DevServerUI struct {
 	logs  *tview.TextView
 	ovw   *tview.TextView
 	ssBtn *tview.Button
+	cmds  *DevServerCommands
 
 	state     *serverState
 	focusMenu func()
@@ -133,17 +134,8 @@ func (ds *DevServerUI) MakeActive(cmds *BottomCommandsUI) {
 	setServerButtonTextBasedOnRunning(ds)
 	setOverviewText(ds)
 
-	// TODO refactor
-	var lbl string
-	if ds.state.running {
-		lbl = "Stop server"
-	} else {
-		lbl = "Start server"
-	}
-	cmds.AddButton(lbl, 's', func() {
-		ds.toggleServerRunning()
-		ds.ui.SetFocus(ds.info)
-	})
+	ds.cmds = NewDevServerCommands(ds, cmds)
+	ds.cmds.SetServerLabelBasedOnRunning(ds.state.running)
 }
 
 func (ds *DevServerUI) InputCapture(event *tcell.EventKey) *tcell.EventKey {
@@ -239,6 +231,7 @@ func (ds *DevServerUI) setServerRunning(value bool) {
 			if state.active {
 				setServerButtonTextBasedOnRunning(ds)
 				setServerButtonColorBasedOnRunning(ds)
+				ds.cmds.SetServerLabelBasedOnRunning(true)
 			}
 
 			ds.startServer()
@@ -247,6 +240,7 @@ func (ds *DevServerUI) setServerRunning(value bool) {
 				setServerButtonTextBasedOnRunning(ds)
 				setServerButtonColorBasedOnRunning(ds)
 				ds.setHostAndPort("", 0)
+				ds.cmds.SetServerLabelBasedOnRunning(false)
 			}
 
 			ds.shutdownServer()
@@ -384,16 +378,5 @@ func LoadDevServerModel(u *UI) {
 		u.DevModel = model
 	} else {
 		u.DevModel.ProjectDir = projectDir
-	}
-}
-
-// TODO refactor, this should go away
-func SetButtonState(state *serverState, btn *tview.Button, form *tview.Form) {
-	if state.running {
-		btn.SetLabel("Stop server")
-		form.SetButtonBackgroundColor(tcell.ColorDarkRed)
-	} else {
-		btn.SetLabel("Start server")
-		form.SetButtonBackgroundColor(Styles.ContrastBackgroundColor)
 	}
 }

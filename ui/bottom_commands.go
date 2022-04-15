@@ -30,9 +30,13 @@ func NewBottomCommands(app *tview.Application) *BottomCommandsUI {
 	}
 }
 
+func (c *BottomCommandsUI) FormatLabel(label string, shortcut rune) string {
+	return fmt.Sprintf("%s [[#be0000::b]%c[-:-:-]]", label, shortcut)
+}
+
 func (c *BottomCommandsUI) AddButton(label string, shortcut rune, cb func()) *tview.Button {
 	idx := c.navForm.GetButtonCount()
-	lbl := fmt.Sprintf("%s [[#be0000::b]%c[-:-:-]]", label, shortcut)
+	lbl := c.FormatLabel(label, shortcut)
 	c.navForm.AddButton(lbl, cb)
 	btn := c.navForm.GetButton(idx)
 	return btn
