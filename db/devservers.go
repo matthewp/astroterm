@@ -11,7 +11,11 @@ type DevServerModel struct {
 	ProjectDir string
 }
 
-func (d *Database) LoadDeverServerModel(projectDir string) (*DevServerModel, error) {
+func (m *DevServerModel) IsRunning() bool {
+	return m.Pid != 0
+}
+
+func (d *Database) LoadDevServerModel(projectDir string) (*DevServerModel, error) {
 	if err := d.ensureOpened(); err != nil {
 		return nil, err
 	}

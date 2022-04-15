@@ -12,7 +12,7 @@ import (
 type UI struct {
 	DevModel       *db.DevServerModel
 	CurrentProject *project.Project
-	db             *db.Database
+	DB             *db.Database
 	app            *tview.Application
 	grid           *tview.Grid
 	menu           *Menu
@@ -38,6 +38,7 @@ type UISection interface {
 	MakeActive(*BottomCommandsUI)
 	Stop()
 	SetFocusMenu(func())
+	InputCapture(event *tcell.EventKey) *tcell.EventKey
 }
 
 func NewUI() *UI {
@@ -46,18 +47,19 @@ func NewUI() *UI {
 		DevModel:       &db.DevServerModel{},
 		CurrentProject: loadLocalProject(),
 		app:            app,
-		db:             db.NewDatabase(),
+		DB:             db.NewDatabase(),
 		sections:       make(map[UISectionType]UISection),
 	}
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Rune() == 'q' {
+		switch event.Rune() {
+		case 'q':
 			if ui.MaybeStop() {
 				app.Stop()
 			}
 			return nil
 		}
-		return event
+		return ui.currentMain.InputCapture(event)
 	})
 
 	toolbar := NewToolbar(app)

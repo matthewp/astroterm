@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
@@ -37,4 +38,8 @@ func (b *BuildUI) SetFocusMenu(focusMenu func()) {
 
 func (b *BuildUI) MakeActive(cmds *BottomCommandsUI) {
 
+}
+
+func (b *BuildUI) InputCapture(event *tcell.EventKey) *tcell.EventKey {
+	return event
 }
