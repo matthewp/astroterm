@@ -34,3 +34,7 @@ func (b *IntegrationsUI) Stop() {}
 func (b *IntegrationsUI) SetFocusMenu(focusMenu func()) {
 
 }
+
+func (b *IntegrationsUI) MakeActive(cmds *BottomCommandsUI) {
+
+}

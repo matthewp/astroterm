@@ -1,27 +1,43 @@
 package ui
 
-import "github.com/rivo/tview"
+import (
+	"fmt"
 
-type BottomCommands struct {
+	"github.com/rivo/tview"
+)
+
+type BottomCommandsUI struct {
 	*tview.Flex
-	app *tview.Application
+	app     *tview.Application
+	navForm *tview.Form
 }
 
-func NewBottomCommands(app *tview.Application) *BottomCommands {
+func NewBottomCommands(app *tview.Application) *BottomCommandsUI {
 	flex := tview.NewFlex()
 
 	navForm := tview.NewForm()
 	navForm.SetBorderPadding(0, 0, 0, 0)
 	navForm.SetBackgroundColor(NavStyles.BackgroundColor)
-	navForm.AddButton("One", nil)
-	navForm.AddButton("Two", nil)
 	navForm.SetButtonBackgroundColor(NavStyles.BackgroundColor)
 	navForm.SetButtonTextColor(NavStyles.TextColor)
 
 	flex.AddItem(navForm, 0, 1, false)
 
-	return &BottomCommands{
-		Flex: flex,
-		app:  app,
+	return &BottomCommandsUI{
+		Flex:    flex,
+		app:     app,
+		navForm: navForm,
 	}
+}
+
+func (c *BottomCommandsUI) AddButton(label string, shortcut rune, cb func()) *tview.Button {
+	idx := c.navForm.GetButtonCount()
+	lbl := fmt.Sprintf("%s [[#be0000::b]%c[-:-:-]]", label, shortcut)
+	c.navForm.AddButton(lbl, cb)
+	btn := c.navForm.GetButton(idx)
+	return btn
+}
+
+func (c *BottomCommandsUI) ClearButtons() {
+	c.navForm.ClearButtons()
 }

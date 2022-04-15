@@ -34,3 +34,7 @@ func (b *BuildUI) Stop() {}
 func (b *BuildUI) SetFocusMenu(focusMenu func()) {
 
 }
+
+func (b *BuildUI) MakeActive(cmds *BottomCommandsUI) {
+
+}

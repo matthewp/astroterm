@@ -12,16 +12,16 @@ import (
 type UI struct {
 	DevModel       *db.DevServerModel
 	CurrentProject *project.Project
-
-	db          *db.Database
-	app         *tview.Application
-	grid        *tview.Grid
-	menu        *Menu
-	main        *tview.Flex
-	currentMain UISection
-	pages       *tview.Pages
-
-	sections map[UISectionType]UISection
+	db             *db.Database
+	app            *tview.Application
+	grid           *tview.Grid
+	menu           *Menu
+	cmds           *BottomCommandsUI
+	main           *tview.Flex
+	currentMain    UISection
+	pages          *tview.Pages
+	scBtn          *tview.Button
+	sections       map[UISectionType]UISection
 }
 
 type UISectionType int64
@@ -35,6 +35,7 @@ const (
 
 type UISection interface {
 	Primitive() tview.Primitive
+	MakeActive(*BottomCommandsUI)
 	Stop()
 	SetFocusMenu(func())
 }
@@ -50,7 +51,7 @@ func NewUI() *UI {
 	}
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Rune() == 113 /* q */ {
+		if event.Rune() == 'q' {
 			if ui.MaybeStop() {
 				app.Stop()
 			}
@@ -71,10 +72,11 @@ func NewUI() *UI {
 	ui.menu = menu
 	ui.main = main
 
+	cmds := NewBottomCommands(app)
+	ui.cmds = cmds
+
 	defaultMain := ui.LoadSection(SectionDevelopment)
 	ui.SetMainItem(defaultMain)
-
-	cmds := NewBottomCommands(app)
 
 	grid := tview.NewGrid().
 		SetRows(1, 0, 1).
@@ -188,7 +190,10 @@ func (u *UI) LoadSection(sec UISectionType) UISection {
 func (u *UI) SetMainItem(item UISection) {
 	p := item.Primitive()
 	u.main.AddItem(p, 0, 1, false)
+	u.cmds.ClearButtons()
+	item.MakeActive(u.cmds)
 	u.currentMain = item
+
 }
 
 func (u *UI) Draw() *tview.Application {

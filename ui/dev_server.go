@@ -17,6 +17,7 @@ import (
 type DevServerUI struct {
 	Flex      *tview.Flex
 	ui        *UI
+	info      *tview.Flex
 	logs      *tview.TextView
 	ovw       *tview.TextView
 	state     *serverState
@@ -105,6 +106,7 @@ func NewDevServer(u *UI) *DevServerUI {
 	devServer = &DevServerUI{
 		Flex:  flex,
 		ui:    u,
+		info:  info,
 		logs:  logs,
 		ovw:   ovw,
 		state: state,
@@ -122,15 +124,9 @@ func NewDevServer(u *UI) *DevServerUI {
 	SetButtonState(state, btn, form)
 
 	btn.SetSelectedFunc(func() {
-		state.running = !state.running
 		SetButtonState(state, btn, form)
 		u.SetFocus(flex)
-
-		if state.running {
-			devServer.startServer()
-		} else {
-			devServer.shutdownServer(true)
-		}
+		devServer.toggleServerState()
 	})
 	MakeToggleableButton(btn, form, u)
 
@@ -154,15 +150,28 @@ func (ds *DevServerUI) Stop() {
 	ds.shutdownServer(false)
 }
 
+func (ds *DevServerUI) SetFocusMenu(focusMenu func()) {
+	ds.focusMenu = focusMenu
+}
+
+func (ds *DevServerUI) MakeActive(cmds *BottomCommandsUI) {
+	var lbl string
+	if ds.state.running {
+		lbl = "Stop server"
+	} else {
+		lbl = "Start server"
+	}
+	cmds.AddButton(lbl, 's', func() {
+		ds.toggleServerState()
+		ds.ui.SetFocus(ds.info)
+	})
+}
+
 func (ds *DevServerUI) Write(p []byte) (int, error) {
 	if ds.Model().Port == 0 {
 		ds.parseHostInformation(p)
 	}
 	return ds.logs.Write(p)
-}
-
-func (ds *DevServerUI) SetFocusMenu(focusMenu func()) {
-	ds.focusMenu = focusMenu
 }
 
 func (ds *DevServerUI) parseHostInformation(p []byte) {
@@ -190,6 +199,16 @@ func (ds *DevServerUI) setOverviewInformation() {
 		msg = fmt.Sprintf("Listening at http://%s:%v", model.Hostname, model.Port)
 	}
 	ds.ovw.SetText(msg)
+}
+
+func (ds *DevServerUI) toggleServerState() {
+	state := ds.state
+	state.running = !state.running
+	if state.running {
+		ds.startServer()
+	} else {
+		ds.shutdownServer(true)
+	}
 }
 
 func (ds *DevServerUI) startServer() error {
