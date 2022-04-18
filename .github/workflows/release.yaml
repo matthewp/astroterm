@@ -1,5 +1,6 @@
 # .github/workflows/release.yaml
 
+name: Astroterm Release
 on:
   push
 
