@@ -16,14 +16,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    # - uses: wangyoucao577/go-release-action@v1.25
-    #   with:
-    #     github_token: ${{ secrets.GITHUB_TOKEN }}
-    #     goos: ${{ matrix.goos }}
-    #     goarch: ${{ matrix.goarch }}
-    #     goversion: "https://dl.google.com/go/go1.18.linux-amd64.tar.gz"
-    #     extra_files: LICENSE README.md
-    #     ldflags: -X 'astroterm/version.Version=${{ github.event.release.tag_name }}'
+    - name: Set output
+      id: vars
+      run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
     - name: Build with xgo
       uses: crazy-max/ghaction-xgo@v1
       if: startsWith(github.ref, 'refs/tags/')
@@ -35,8 +30,10 @@ jobs:
         v: true
         x: false
         race: false
-        ldflags: -s -w
-        buildmode: default
+        ldflags: -X 'astroterm/version.Version=${{ steps.vars.outputs.tag }}'
+    - name: Package artifacts
+      run: |
+        ./.github/package.sh
     - name: Release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
