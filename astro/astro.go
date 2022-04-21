@@ -3,7 +3,6 @@ package astro
 import (
 	aenv "astroterm/env"
 	"errors"
-	"fmt"
 	"io"
 	"os/exec"
 	"path"
@@ -12,8 +11,9 @@ import (
 type AstroCommand string
 
 const (
-	Dev   AstroCommand = "dev"
-	Build AstroCommand = "build"
+	Dev     AstroCommand = "dev"
+	Build   AstroCommand = "build"
+	Preview AstroCommand = "preview"
 )
 
 func pipetotext(pipe io.ReadCloser, wrtr io.Writer) {
@@ -53,7 +53,6 @@ func RunCommand(subcmd AstroCommand, wrtr io.Writer) (*exec.Cmd, error) {
 
 	err = cmd.Start()
 	if err != nil {
-		fmt.Printf("ERROR: %e", err)
 		return nil, err
 	}
 

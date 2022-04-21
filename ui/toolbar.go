@@ -12,7 +12,8 @@ import (
 
 type Toolbar struct {
 	*bestbar.Toolbar
-	u *UI
+	u       *UI
+	servers int
 }
 
 func NewToolbar(u *UI) *Toolbar {
@@ -21,12 +22,22 @@ func NewToolbar(u *UI) *Toolbar {
 		u.Draw()
 	})
 
-	t.AddMenuList("File").
+	t.AddMenuList("File", 'F').
 		AddItem("Open", 'O', nil).
 		AddItem("Exit", 'x', func() {
 			u.MaybeStop()
 		})
-	t.AddMenuList("Help").
+	t.AddMenuList("🟢 Run", 'R').
+		AddItem("Build", 'B', func() {
+
+		}).
+		AddItem("Start dev server", 'd', func() {
+
+		}).
+		AddItem("Start the preview server", 'p', func() {
+
+		})
+	t.AddMenuList("Help", 'H').
 		AddItem("Documentation", 'D', func() {
 			util.OpenBrowser("https://pkg.spooky.click/astroterm/")
 		})
@@ -34,11 +45,16 @@ func NewToolbar(u *UI) *Toolbar {
 	tb := &Toolbar{
 		Toolbar: t,
 		u:       u,
+		servers: 0,
 	}
 
 	go pulsateTitle(tb, getColors(), 0, true)
 
 	return tb
+}
+
+func (t *Toolbar) SetDevServerRunning(running bool) {
+
 }
 
 const pulsateDuration = 50
