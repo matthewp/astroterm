@@ -1,0 +1,9 @@
+.demo-video {
+    max-width: 100%;
+}
+
+@media(min-width: 481px) {
+    .demo-video {
+        max-width: 50%;
+    }
+}
