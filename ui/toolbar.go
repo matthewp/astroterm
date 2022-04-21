@@ -2,6 +2,7 @@ package ui
 
 import (
 	"astroterm/project"
+	"astroterm/util"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -26,7 +27,9 @@ func NewToolbar(u *UI) *Toolbar {
 			u.MaybeStop()
 		})
 	t.AddMenuList("Help").
-		AddItem("Ask for help", 'h', nil)
+		AddItem("Documentation", 'D', func() {
+			util.OpenBrowser("https://pkg.spooky.click/astroterm/")
+		})
 
 	tb := &Toolbar{
 		Toolbar: t,
