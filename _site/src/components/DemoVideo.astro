@@ -1,0 +1,19 @@
+---
+import mp4Url from '../assets/videos/demo.mp4?url';
+import webmUrl from '../assets/videos/demo.webm?url';
+---
+<style is:global>
+    .demo-video {
+        max-width: 100%;
+    }
+
+    @media(min-width: 481px) {
+        .demo-video {
+            max-width: 50%;
+        }
+    }
+</style>
+<video class="demo-video" controls>
+    <source src={mp4Url} type="video/mp4">
+    <source src={webmUrl} type="video/webm">
+</video>

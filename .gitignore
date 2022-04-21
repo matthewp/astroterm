@@ -1,3 +1,4 @@
 node_modules/
 build/
 examples/**/dist/
+_site/dist/

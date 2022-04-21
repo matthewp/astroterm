@@ -1,13 +1,28 @@
 ---
-
+import DemoVideo from '../components/DemoVideo.astro';
 ---
 <html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width" />
-		<title>astroterm</title>
-	</head>
-	<body>
-		<h1>astroterm</h1>
-	</body>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>astroterm</title>
+    <style is:global>
+      @import "../styles/main.css";
+    </style>
+  </head>
+  <body>
+    <h1>astroterm</h1>
+    <h2>A <abbr title="Terminal User Interface">TUI</abbr> app for <a href="https://astro.build/">Astro</a></h2>
+
+    <article>
+      <p><strong>astroterm</strong> helps you develop Astro apps. Start your development server. Run the build. Preview your built app. Add integrations. All in one easy to use terminal app.</p>
+      <DemoVideo />
+
+      <section id="installation">
+        <h3>Installation</h3>
+        <p>Down a release from the <a href="https://github.com/matthewp/astroterm/releases">releases page</a>.</p>
+        <p>In the future we will have installation via OS package managers.</p>
+      </section>
+    </article>
+  </body>
 </html>
