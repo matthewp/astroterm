@@ -2,3 +2,4 @@ node_modules/
 build/
 examples/**/dist/
 _site/dist/
+.DS_Store
