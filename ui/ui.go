@@ -22,6 +22,7 @@ type UI struct {
 	pages          *tview.Pages
 	scBtn          *tview.Button
 	sections       map[UISectionType]UISection
+	toolbar        *Toolbar
 }
 
 type UISectionType int64
@@ -50,20 +51,26 @@ func NewUI() *UI {
 		DB:             db.NewDatabase(),
 		sections:       make(map[UISectionType]UISection),
 	}
+	ui.toolbar = NewToolbar(ui)
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Rune() {
 		case 'q':
-			if ui.MaybeStop() {
-				app.Stop()
-			}
+			ui.MaybeStop()
 			return nil
 		}
-		return ui.currentMain.InputCapture(event)
+		if ui.toolbar.HasOpenMenu() {
+			return ui.toolbar.InputCapture(event)
+		} else {
+			event = ui.currentMain.InputCapture(event)
+			if event != nil {
+				ui.toolbar.InputCapture(event)
+			}
+			return event
+		}
 	})
 
-	toolbar := NewToolbar(app)
-	toolbar.SetProject(ui.CurrentProject)
+	ui.toolbar.SetProject(ui.CurrentProject)
 	menu := NewMenu(ui)
 	menu.SetFocusSection(func() {
 		if ui.currentMain != nil {
@@ -83,7 +90,7 @@ func NewUI() *UI {
 	grid := tview.NewGrid().
 		SetRows(1, 0, 1).
 		SetColumns(30, 0, 30).
-		AddItem(toolbar, 0, 0, 1, 3, 0, 0, false).
+		//AddItem(toolbar, 0, 0, 1, 3, 0, 0, false).
 		AddItem(cmds, 2, 0, 1, 3, 0, 0, false)
 
 	// Layout for screens narrower than 100 cells (menu and side bar are hidden).
@@ -94,7 +101,9 @@ func NewUI() *UI {
 	grid.AddItem(menu, 1, 0, 1, 1, 0, 100, false).
 		AddItem(main, 1, 1, 1, 2, 0, 100, false)
 
-	pages := tview.NewPages().AddPage("grid", grid, true, true)
+	pages := tview.NewPages()
+	pages.AddPage("grid", grid, true, true)
+	pages.AddPage("toolbar", ui.toolbar, true, true)
 	ui.pages = pages
 	ui.grid = grid
 
@@ -112,6 +121,8 @@ func (ui *UI) Start() error {
 
 	if env.IsAstroProject {
 		app.SetRoot(ui.pages, true).SetFocus(ui.menu).EnableMouse(true)
+
+		//app.SetFocus(ui.toolbar.ml)
 	} else {
 		naModal := notAnAstroAppModal(app)
 		app.SetRoot(naModal, true).SetFocus(naModal).EnableMouse(true)
@@ -123,7 +134,13 @@ func (ui *UI) Start() error {
 	return nil
 }
 
-func (ui *UI) MaybeStop() bool {
+func (ui *UI) MaybeStop() {
+	if ui.ConfirmStop() {
+		ui.app.Stop()
+	}
+}
+
+func (ui *UI) ConfirmStop() bool {
 	var devServerRunning bool = ui.DevModel.Pid != 0
 	if devServerRunning {
 		app := ui.app

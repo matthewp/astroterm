@@ -37,11 +37,13 @@ var Styles = tview.Theme{
 }
 
 var NavStyles = struct {
-	BackgroundColor tcell.Color
-	TextColor       tcell.Color
-	TextHotKeyColor tcell.Color
+	BackgroundColor            tcell.Color
+	TextColor                  tcell.Color
+	TextHotKeyColor            tcell.Color
+	MenuBackgroundColorActived tcell.Color
 }{
 	tcell.ColorLightGray,
 	tcell.ColorBlack.TrueColor(),
 	tcell.NewRGBColor(190, 0, 0),
+	tcell.NewRGBColor(87, 192, 56),
 }

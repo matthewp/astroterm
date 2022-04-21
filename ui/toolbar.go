@@ -6,44 +6,36 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/lucasb-eyer/go-colorful"
-	"github.com/rivo/tview"
+	"github.com/matthewp/bestbar"
 )
 
 type Toolbar struct {
-	*tview.Flex
-	app      *tview.Application
-	titlebar *tview.TextView
+	*bestbar.Toolbar
+	u *UI
 }
 
-func NewToolbar(app *tview.Application) *Toolbar {
-	flex := tview.NewFlex()
+func NewToolbar(u *UI) *Toolbar {
+	t := bestbar.NewToolbar()
+	t.SetDrawFunc(func() {
+		u.Draw()
+	})
 
-	navForm := tview.NewForm()
-	navForm.SetBorderPadding(0, 0, 0, 0)
-	navForm.SetBackgroundColor(NavStyles.BackgroundColor)
-	navForm.AddButton("[#be0000::b]F[-:-:-]ile", nil)
-	navForm.AddButton("[#be0000::b]W[-:-:-]orkspaces", nil)
-	navForm.AddButton("[#be0000::b]H[-:-:-]elp", nil)
-	navForm.SetButtonBackgroundColor(NavStyles.BackgroundColor)
-	navForm.SetButtonTextColor(NavStyles.TextColor)
+	t.AddMenuList("File").
+		AddItem("Open", 'O', nil).
+		AddItem("Exit", 'x', func() {
+			u.MaybeStop()
+		})
+	t.AddMenuList("Help").
+		AddItem("Ask for help", 'h', nil)
 
-	titlebar := tview.NewTextView()
-	titlebar.SetBackgroundColor(NavStyles.BackgroundColor)
-	titlebar.SetTextColor(NavStyles.TextColor)
-	titlebar.SetTextAlign(tview.AlignRight)
-	titlebar.SetBorderPadding(0, 0, 0, 2)
-
-	flex.AddItem(navForm, 0, 2, false)
-	flex.AddItem(titlebar, 0, 1, false)
-
-	t := &Toolbar{
-		Flex:     flex,
-		app:      app,
-		titlebar: titlebar,
+	tb := &Toolbar{
+		Toolbar: t,
+		u:       u,
 	}
 
-	go pulsateTitle(t, getColors(), 0, true)
-	return t
+	go pulsateTitle(tb, getColors(), 0, true)
+
+	return tb
 }
 
 const pulsateDuration = 50
@@ -65,8 +57,8 @@ func getColors() []tcell.Color {
 
 func pulsateTitle(t *Toolbar, titleColors []tcell.Color, idx int, forward bool) {
 	color := titleColors[idx]
-	t.titlebar.SetTextColor(color)
-	t.app.Draw()
+	t.Toolbar.SetTitleTextColor(color)
+	t.u.Draw()
 
 	time.Sleep(pulsateDuration * time.Millisecond)
 	nf := forward
@@ -89,5 +81,5 @@ func pulsateTitle(t *Toolbar, titleColors []tcell.Color, idx int, forward bool) 
 }
 
 func (t *Toolbar) SetProject(p *project.Project) {
-	t.titlebar.SetText(p.Name())
+	t.SetTitle(p.Name())
 }

@@ -17,7 +17,6 @@ func NewMenu(u *UI) *Menu {
 		AddItem("Build", "", 'b', nil).
 		AddItem("Integrations", "", 'i', nil).
 		AddItem("Diagnostics", "", 'n', nil)
-		//AddItem("List item 4", "Some explanatory text", 'd', nil)
 	list.SetBorder(true)
 	list.SetTitle("Menu")
 	list.SetTitleAlign(tview.AlignLeft)
