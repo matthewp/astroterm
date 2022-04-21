@@ -12,9 +12,6 @@ jobs:
       matrix:
         go_version:
           - 1.18
-
-
-
     steps:
     - uses: actions/checkout@v2
     - name: Set output
@@ -33,6 +30,7 @@ jobs:
         race: false
         ldflags: -X 'astroterm/version.Version=${{ steps.vars.outputs.tag }}'
     - name: Package artifacts
+      if: startsWith(github.ref, 'refs/tags/')
       run: |
         ./.github/package.sh
     - name: Release
