@@ -157,7 +157,7 @@ func setOverviewText(ds *DevServerUI) {
 	if model.Hostname == "" {
 		msg = "No server running"
 	} else {
-		msg = fmt.Sprintf("Listening at http://%s:%v", model.Hostname, model.Port)
+		msg = fmt.Sprintf("┃ Local	http://%s:%v%v", model.Hostname, model.Port, model.Subpath)
 	}
 	ds.ovw.SetText(msg)
 }

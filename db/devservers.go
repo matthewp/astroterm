@@ -8,6 +8,7 @@ type DevServerModel struct {
 	Pid        int
 	Hostname   string
 	Port       int
+	Subpath    string
 	ProjectDir string
 }
 
@@ -19,14 +20,14 @@ func (d *Database) LoadDevServerModel(projectDir string) (*DevServerModel, error
 	if err := d.ensureOpened(); err != nil {
 		return nil, err
 	}
-	stmt, err := d.db.Prepare("SELECT pid, hostname, port, projectdir FROM devservers WHERE projectdir = ?;")
+	stmt, err := d.db.Prepare("SELECT pid, hostname, port, subpath, projectdir FROM devservers WHERE projectdir = ?;")
 	if err != nil {
 	}
 	defer stmt.Close()
 
 	model := &DevServerModel{}
 	row := stmt.QueryRow(projectDir)
-	err = row.Scan(&model.Pid, &model.Hostname, &model.Port, &model.ProjectDir)
+	err = row.Scan(&model.Pid, &model.Hostname, &model.Port, &model.Subpath, &model.ProjectDir)
 	if model.Pid == 0 {
 		return nil, err
 	}
@@ -37,7 +38,7 @@ func (d *Database) AddStartedDevServer(model *DevServerModel) error {
 	if err := d.ensureOpened(); err != nil {
 		return err
 	}
-	_, err := d.db.Exec("INSERT INTO devservers VALUES(?,NULL,NULL,?);", model.Pid, model.ProjectDir)
+	_, err := d.db.Exec("INSERT INTO devservers VALUES(?,NULL,NULL,NULL,?);", model.Pid, model.ProjectDir)
 	return err
 }
 
@@ -46,8 +47,8 @@ func (d *Database) SetDevServerInformation(model *DevServerModel) error {
 		return err
 	}
 	_, err := d.db.Exec(`UPDATE devservers
-	SET port = ?, hostname = ?
-	WHERE pid = ?;`, model.Port, model.Hostname, model.Pid)
+	SET port = ?, hostname = ?, subpath = ?
+	WHERE pid = ?;`, model.Port, model.Hostname, model.Subpath, model.Pid)
 	return err
 }
 

@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-var portMatch = regexp.MustCompile("(localhost|127.0.0.1):([0-9]{4})\\/")
+var portMatch = regexp.MustCompile("(localhost|127.0.0.1):([0-9]{4})(\\/.*)")
 
 type DevServerActor struct {
 	DB      *db.Database
@@ -117,10 +117,11 @@ func (d *DevServerActor) startServer() error {
 
 func (d *DevServerActor) Write(p []byte) (int, error) {
 	if d.Model.Port == 0 {
-		hostname, port := d.parseHostInformation(p)
+		hostname, port, subpath := d.parseHostInformation(p)
 		if hostname != "" {
 			d.Model.Port = port
 			d.Model.Hostname = hostname
+			d.Model.Subpath = subpath
 			d.saveDevServerInformation()
 
 			d.bhostinfo.Publish(d.Model)
@@ -131,16 +132,17 @@ func (d *DevServerActor) Write(p []byte) (int, error) {
 	return 0, nil
 }
 
-func (d *DevServerActor) parseHostInformation(p []byte) (string, int) {
+func (d *DevServerActor) parseHostInformation(p []byte) (string, int, string) {
 	part := string(p)
 	rs := portMatch.FindStringSubmatch(part)
 	if len(rs) > 1 {
 		portString := rs[2]
 		port, _ := strconv.Atoi(portString)
 		hostname := rs[1]
-		return hostname, port
+		subpath := rs[3]
+		return hostname, port, subpath
 	}
-	return "", 0
+	return "", 0, ""
 }
 
 func (d *DevServerActor) saveDevServerInformation() error {

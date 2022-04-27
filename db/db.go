@@ -11,10 +11,11 @@ import (
 const dbName = "stateV0.db"
 const createSchemaStatement string = `
 CREATE TABLE IF NOT EXISTS devservers (
-	pid integer NOT NULL PRIMARY KEY,
-	port integer,
-	hostname text,
-	projectdir text
+	pid 		integer NOT NULL PRIMARY KEY,
+	port 		integer,
+	hostname 	text,
+	subpath 	text,
+	projectdir 	text
 )`
 
 type Database struct {
