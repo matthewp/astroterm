@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"syscall"
 
+	"astroterm/actors"
 	"astroterm/astro"
 	"astroterm/db"
 
@@ -15,14 +16,15 @@ import (
 )
 
 type DevServerUI struct {
-	Flex  *tview.Flex
-	ui    *UI
-	form  *tview.Form
-	info  *tview.Flex
-	logs  *tview.TextView
-	ovw   *tview.TextView
-	ssBtn *tview.Button
-	cmds  *DevServerCommands
+	Flex     *tview.Flex
+	ui       *UI
+	form     *tview.Form
+	info     *tview.Flex
+	logs     *tview.TextView
+	ovw      *tview.TextView
+	ssBtn    *tview.Button
+	cmds     *DevServerCommands
+	devActor *actors.DevServerActor
 
 	state     *serverState
 	focusMenu func()
@@ -37,7 +39,7 @@ type serverState struct {
 
 var portMatch = regexp.MustCompile("(localhost|127.0.0.1):([0-9]{4})\\/")
 
-func NewDevServer(u *UI) *DevServerUI {
+func NewDevServer(u *UI, devActor *actors.DevServerActor) *DevServerUI {
 	var ds *DevServerUI
 
 	// Views
@@ -59,14 +61,15 @@ func NewDevServer(u *UI) *DevServerUI {
 		serverButtonColor: tcell.ColorBlack,
 	}
 	ds = &DevServerUI{
-		Flex:  flex,
-		ui:    u,
-		form:  form,
-		info:  info,
-		logs:  logs,
-		ovw:   ovw,
-		ssBtn: ssBtn,
-		state: state,
+		Flex:     flex,
+		ui:       u,
+		form:     form,
+		info:     info,
+		logs:     logs,
+		ovw:      ovw,
+		ssBtn:    ssBtn,
+		state:    state,
+		devActor: devActor,
 	}
 
 	// Event listeners
@@ -109,6 +112,8 @@ func NewDevServer(u *UI) *DevServerUI {
 		AddItem(ovw, 0, 1, false).
 		AddItem(nil, 0, 1, false)
 
+	go ds.listenForDevEvents()
+
 	return ds
 }
 
@@ -118,9 +123,11 @@ func (ds *DevServerUI) Primitive() tview.Primitive {
 }
 
 func (ds *DevServerUI) Stop() {
-	// TODO UI?
 	ds.setActive(false)
 	ds.setServerRunning(false)
+
+	done := ds.devActor.StopDevServer()
+	<-done
 }
 
 func (ds *DevServerUI) SetFocusMenu(focusMenu func()) {
@@ -214,6 +221,7 @@ func setServerButtonColorBasedOnRunning(ds *DevServerUI) {
 }
 
 func (ds *DevServerUI) setHostAndPort(hostname string, port int) {
+	// TODO not thread safe, get rid of
 	ds.Model().Port = port
 	ds.Model().Hostname = hostname
 	setOverviewText(ds)
@@ -233,8 +241,6 @@ func (ds *DevServerUI) setServerRunning(value bool) {
 				setServerButtonColorBasedOnRunning(ds)
 				ds.cmds.SetServerLabelBasedOnRunning(true)
 			}
-
-			ds.startServer()
 		} else {
 			if state.active {
 				setServerButtonTextBasedOnRunning(ds)
@@ -242,17 +248,17 @@ func (ds *DevServerUI) setServerRunning(value bool) {
 				ds.setHostAndPort("", 0)
 				ds.cmds.SetServerLabelBasedOnRunning(false)
 			}
-
-			ds.shutdownServer()
-
-			// This must happen after the model is deleted from the database
-			ds.setPid(0)
 		}
 	}
 }
 
 func (ds *DevServerUI) toggleServerRunning() {
 	ds.setServerRunning(!ds.state.running)
+	if ds.state.running {
+		ds.devActor.StartDevServer()
+	} else {
+		ds.devActor.StopDevServer()
+	}
 }
 
 func (ds *DevServerUI) setActive(value bool) {
@@ -297,6 +303,38 @@ func (ds *DevServerUI) ssBtnSelected() {
 	u := ds.ui
 	u.SetFocus(ds.Flex)
 	ds.toggleServerRunning()
+}
+
+func (ds *DevServerUI) listenForDevEvents() {
+	ischan := ds.devActor.SubscribeToInitialState()
+	hichan := ds.devActor.SubscribeToHostInfo()
+	lchan := ds.devActor.SubscribeToLogs()
+	//stchan := ds.devActor
+	stchan := ds.devActor.SubscribeToStarting()
+	schan := ds.devActor.SubscribeToStopped()
+
+	for {
+		select {
+		case model := <-ischan:
+			ds.ui.DevModel = model
+			ds.setServerRunning(model.IsRunning())
+			setOverviewText(ds)
+			break
+		case model := <-hichan:
+			ds.ui.DevModel = model
+			setOverviewText(ds)
+			break
+		case data := <-lchan:
+			appendLogText(ds, data)
+			break
+		case _ = <-stchan:
+			ds.setServerRunning(true)
+			break
+		case _ = <-schan:
+			ds.setServerRunning(false)
+			break
+		}
+	}
 }
 
 // Logic functions

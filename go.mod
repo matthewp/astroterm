@@ -2,12 +2,10 @@ module astroterm
 
 go 1.18
 
-replace "github.com/matthewp/bestbar" => "../bestbar"
-
 require (
 	github.com/gdamore/tcell/v2 v2.5.1
 	github.com/lucasb-eyer/go-colorful v1.2.0
-	github.com/matthewp/bestbar v0.2.0
+	github.com/matthewp/bestbar v0.3.0
 	github.com/mattn/go-sqlite3 v1.14.12
 	github.com/rivo/tview v0.0.0-20220307222120-9994674d60a8
 )

@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"astroterm/actors"
 	"astroterm/db"
 	aenv "astroterm/env"
 	"astroterm/project"
@@ -14,6 +15,7 @@ type UI struct {
 	CurrentProject *project.Project
 	DB             *db.Database
 	app            *tview.Application
+	DevActor       *actors.DevServerActor
 	grid           *tview.Grid
 	menu           *Menu
 	cmds           *BottomCommandsUI
@@ -51,7 +53,8 @@ func NewUI() *UI {
 		DB:             db.NewDatabase(),
 		sections:       make(map[UISectionType]UISection),
 	}
-	ui.toolbar = NewToolbar(ui)
+	ui.DevActor = actors.NewDevServerActor(ui.CurrentProject).Start()
+	ui.toolbar = NewToolbar(ui, ui.DevActor)
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Rune() {
@@ -185,7 +188,7 @@ func (u *UI) LoadSection(sec UISectionType) UISection {
 	var val UISection
 	switch sec {
 	case SectionDevelopment:
-		val = NewDevServer(u)
+		val = NewDevServer(u, u.DevActor)
 		break
 	case SectionBuild:
 		val = NewBuildUI()

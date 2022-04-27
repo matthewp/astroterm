@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"astroterm/actors"
 	"astroterm/project"
 	"astroterm/util"
 	"time"
@@ -10,51 +11,107 @@ import (
 	"github.com/matthewp/bestbar"
 )
 
-type Toolbar struct {
-	*bestbar.Toolbar
-	u       *UI
-	servers int
+type toolbarState struct {
+	devRunning     bool
+	previewRunning bool
 }
 
-func NewToolbar(u *UI) *Toolbar {
+type Toolbar struct {
+	*bestbar.Toolbar
+	u               *UI
+	state           *toolbarState
+	servers         int
+	devActor        *actors.DevServerActor
+	runList         *bestbar.MenuList
+	devServerAction *bestbar.MenuListItem
+}
+
+func NewToolbar(u *UI, devActor *actors.DevServerActor) *Toolbar {
 	t := bestbar.NewToolbar()
 	t.SetDrawFunc(func() {
 		u.Draw()
 	})
+
+	tb := &Toolbar{
+		state:    &toolbarState{},
+		Toolbar:  t,
+		u:        u,
+		servers:  0,
+		devActor: devActor,
+	}
 
 	t.AddMenuList("File", 'F').
 		AddItem("Open", 'O', nil).
 		AddItem("Exit", 'x', func() {
 			u.MaybeStop()
 		})
-	t.AddMenuList("🟢 Run", 'R').
+	tb.runList = t.AddMenuList("🔴 Run", 'R').
 		AddItem("Build", 'B', func() {
 
 		}).
 		AddItem("Start dev server", 'd', func() {
-
+			if tb.state.devRunning {
+				tb.devActor.StopDevServer()
+			} else {
+				tb.devActor.StartDevServer()
+			}
 		}).
 		AddItem("Start the preview server", 'p', func() {
 
 		})
+	tb.devServerAction = tb.runList.GetItem(1)
 	t.AddMenuList("Help", 'H').
 		AddItem("Documentation", 'D', func() {
 			util.OpenBrowser("https://pkg.spooky.click/astroterm/")
 		})
 
-	tb := &Toolbar{
-		Toolbar: t,
-		u:       u,
-		servers: 0,
-	}
+	// Event listeners
+	go tb.listenToEvents()
 
 	go pulsateTitle(tb, getColors(), 0, true)
 
 	return tb
 }
 
-func (t *Toolbar) SetDevServerRunning(running bool) {
+// View update functions
+func (t *Toolbar) setRunButtonLabel(label string) {
+	t.runList.SetButtonLabel(label, 'R')
+}
 
+func (t *Toolbar) setDevActionLabel(label string) {
+	t.devServerAction.SetLabel(label, 'd')
+}
+
+// State update functions
+func (t *Toolbar) setDevServerRunning(running bool) {
+	if t.state.devRunning != running {
+		t.state.devRunning = running
+
+		if running {
+			t.setDevActionLabel("Stop dev server")
+			t.setRunButtonLabel("🟢 Run")
+		} else {
+			t.setDevActionLabel("Start dev server")
+			t.setRunButtonLabel("🔴 Run")
+		}
+	}
+}
+
+// Event listeners
+func (t *Toolbar) listenToEvents() {
+	//ischan := t.devActor.SubscribeToInitialState()
+	schan := t.devActor.SubscribeToStarting()
+	stchan := t.devActor.SubscribeToStopped()
+	for {
+		select {
+		case _ = <-schan:
+			t.setDevServerRunning(true)
+			break
+		case _ = <-stchan:
+			t.setDevServerRunning(false)
+			break
+		}
+	}
 }
 
 const pulsateDuration = 50
