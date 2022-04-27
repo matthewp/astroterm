@@ -14,7 +14,8 @@ jobs:
           - 1.18
     steps:
     - uses: actions/checkout@v3
-      set-safe-directory: '/source'
+      with:
+        set-safe-directory: '/source'
     - name: Set output
       id: vars
       run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
