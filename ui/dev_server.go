@@ -2,13 +2,9 @@ package ui
 
 import (
 	"fmt"
-	"os"
 	"regexp"
-	"strconv"
-	"syscall"
 
 	"astroterm/actors"
-	"astroterm/astro"
 	"astroterm/db"
 
 	"github.com/gdamore/tcell/v2"
@@ -154,17 +150,6 @@ func (ds *DevServerUI) InputCapture(event *tcell.EventKey) *tcell.EventKey {
 	return event
 }
 
-func (ds *DevServerUI) Write(p []byte) (int, error) {
-	if ds.Model().Port == 0 {
-		hostname, port := ds.parseHostInformation(p)
-		if hostname != "" {
-			ds.setHostAndPort(hostname, port)
-			saveDevServerInformation(ds)
-		}
-	}
-	return appendLogText(ds, p)
-}
-
 // View update functions
 func setOverviewText(ds *DevServerUI) {
 	model := ds.Model()
@@ -220,17 +205,6 @@ func setServerButtonColorBasedOnRunning(ds *DevServerUI) {
 	}
 }
 
-func (ds *DevServerUI) setHostAndPort(hostname string, port int) {
-	// TODO not thread safe, get rid of
-	ds.Model().Port = port
-	ds.Model().Hostname = hostname
-	setOverviewText(ds)
-}
-
-func (ds *DevServerUI) setPid(value int) {
-	ds.Model().Pid = value
-}
-
 func (ds *DevServerUI) setServerRunning(value bool) {
 	state := ds.state
 	if state.running != value {
@@ -245,7 +219,6 @@ func (ds *DevServerUI) setServerRunning(value bool) {
 			if state.active {
 				setServerButtonTextBasedOnRunning(ds)
 				setServerButtonColorBasedOnRunning(ds)
-				ds.setHostAndPort("", 0)
 				ds.cmds.SetServerLabelBasedOnRunning(false)
 			}
 		}
@@ -338,69 +311,8 @@ func (ds *DevServerUI) listenForDevEvents() {
 }
 
 // Logic functions
-func (ds *DevServerUI) parseHostInformation(p []byte) (string, int) {
-	part := string(p)
-	rs := portMatch.FindStringSubmatch(part)
-	if len(rs) > 1 {
-		portString := rs[2]
-		port, _ := strconv.Atoi(portString)
-		hostname := rs[1]
-		return hostname, port
-	}
-	return "", 0
-}
-
 func (ds *DevServerUI) Model() *db.DevServerModel {
 	return ds.ui.DevModel
-}
-
-// Effects
-func saveDevServerInformation(ds *DevServerUI) {
-	err := ds.ui.DB.SetDevServerInformation(ds.Model())
-	if err != nil {
-		appendLogText(ds, []byte(err.Error()))
-	}
-}
-
-func (ds *DevServerUI) startServer() error {
-	cmd, err := astro.RunCommand(astro.Dev, ds)
-	if err != nil {
-		return err
-	}
-	ds.setPid(cmd.Process.Pid)
-	ds.ui.DB.AddStartedDevServer(ds.Model())
-	return nil
-}
-
-func (ds *DevServerUI) killServer() error {
-	if ds.Model().Pid != 0 {
-		err1 := killPid(ds.Model().Pid + 1)
-		err2 := killPid(ds.Model().Pid)
-
-		if err1 != nil {
-			return err1
-		}
-		return err2
-	}
-	return nil
-}
-
-func (ds *DevServerUI) shutdownServer() error {
-	e1 := ds.killServer()
-	e2 := ds.ui.DB.DeleteDevServer(ds.Model())
-	if e1 != nil {
-		return e1
-	}
-	return e2
-}
-
-func killPid(pid int) error {
-	proc, err := os.FindProcess(pid)
-	if err == nil {
-		proc.Signal(syscall.SIGKILL)
-		proc.Wait()
-	}
-	return err
 }
 
 // TODO refactor
