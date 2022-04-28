@@ -8,8 +8,11 @@ import (
 func killPid(pid int) error {
 	proc, err := os.FindProcess(pid)
 	if err == nil {
-		proc.Signal(syscall.SIGKILL)
+		err = syscall.Kill(-proc.Pid, syscall.SIGKILL)
+		if err != nil {
+			return err
+		}
 		proc.Wait()
 	}
-	return err
+	return nil
 }

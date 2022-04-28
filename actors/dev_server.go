@@ -110,6 +110,7 @@ func (d *DevServerActor) startServer() error {
 	if err != nil {
 		return err
 	}
+
 	d.Model.Pid = cmd.Process.Pid
 	d.DB.AddStartedDevServer(d.Model)
 	return nil
@@ -152,13 +153,7 @@ func (d *DevServerActor) saveDevServerInformation() error {
 
 func (d *DevServerActor) killServer() error {
 	if d.Model.Pid != 0 {
-		err1 := killPid(d.Model.Pid + 1)
-		err2 := killPid(d.Model.Pid)
-
-		if err1 != nil {
-			return err1
-		}
-		return err2
+		return killPid(d.Model.Pid)
 	}
 	return nil
 }
