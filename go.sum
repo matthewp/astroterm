@@ -5,8 +5,8 @@ github.com/gdamore/tcell/v2 v2.5.1 h1:zc3LPdpK184lBW7syF2a5C6MV827KmErk9jGVnmsl/
 github.com/gdamore/tcell/v2 v2.5.1/go.mod h1:wSkrPaXoiIWZqW/g7Px4xc79di6FTcpB8tvaKJ6uGBo=
 github.com/lucasb-eyer/go-colorful v1.2.0 h1:1nnpGOrhyZZuNyfu1QjKiUICQ74+3FNCN69Aj6K7nkY=
 github.com/lucasb-eyer/go-colorful v1.2.0/go.mod h1:R4dSotOR9KMtayYi1e77YzuveK+i7ruzyGqttikkLy0=
-github.com/matthewp/bestbar v0.3.0 h1:vMybxrYhtVb15PPDp3laWg/h8tiol13wrPIEUF1OYsc=
-github.com/matthewp/bestbar v0.3.0/go.mod h1:xf+QcnKIegCOvf0PzumNd3mTh87jT4gGXlstgiYHZcU=
+github.com/matthewp/bestbar v0.4.0 h1:sGhoBgI3rKceGUtjUfLki+2BhCDd6aKw+rdzsi1fN1k=
+github.com/matthewp/bestbar v0.4.0/go.mod h1:xf+QcnKIegCOvf0PzumNd3mTh87jT4gGXlstgiYHZcU=
 github.com/mattn/go-runewidth v0.0.13 h1:lTGmDsbAYt5DmK6OnoV7EuIF1wEIFAcxld6ypU4OSgU=
 github.com/mattn/go-runewidth v0.0.13/go.mod h1:Jdepj2loyihRzMpdS35Xk/zdY8IAYHsh153qUoGf23w=
 github.com/mattn/go-sqlite3 v1.14.12 h1:TJ1bhYJPV44phC+IMu1u2K/i5RriLTPe+yc68XDJ1Z0=
