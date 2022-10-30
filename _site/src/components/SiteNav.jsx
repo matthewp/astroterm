@@ -1,4 +1,3 @@
-import { Fragment } from 'preact';
 import '../styles/SiteNav.css';
 
 function SiteLink({ children, link }) {
