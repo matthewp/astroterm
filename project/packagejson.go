@@ -9,6 +9,7 @@ import (
 
 type PackageJson struct {
 	Name         string
+	Scripts      map[string]string
 	Dependencies map[string]string
 }
 

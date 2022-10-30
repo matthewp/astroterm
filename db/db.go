@@ -15,7 +15,8 @@ CREATE TABLE IF NOT EXISTS devservers (
 	port 		integer,
 	hostname 	text,
 	subpath 	text,
-	projectdir 	text
+	projectdir 	text,
+	logpth		text
 )`
 
 type Database struct {

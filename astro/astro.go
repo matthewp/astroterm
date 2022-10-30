@@ -32,7 +32,7 @@ func RunCommand(subcmd AstroCommand, wrtr io.Writer) (*exec.Cmd, error) {
 
 	relBinPath := path.Join("node_modules", ".bin", "astro")
 	if aenv.TryFindFile(env.Pwd, relBinPath) == "" {
-		return nil, errors.New("Unable to find the astro binary. Do you need to run npm install?")
+		return nil, errors.New("unable to find the astro binary. Do you need to run npm install?")
 	}
 
 	binPath := path.Join(env.Pwd, relBinPath)

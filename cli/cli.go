@@ -4,29 +4,50 @@ import (
 	"astroterm/version"
 	"flag"
 	"fmt"
+	"os"
 )
 
 ///https://github.com/benweidig/tortuga/blob/master/Makefile
 
 func Init() bool {
-	var version bool
-	versionUsage := "Show the version and exit"
-	flag.BoolVar(&version, "version", false, versionUsage)
-	flag.BoolVar(&version, "v", false, shorthandUsage(versionUsage))
-	var help bool
-	helpUsage := "Show the help message and exit"
-	flag.BoolVar(&help, "help", false, helpUsage)
-	flag.BoolVar(&help, "h", false, shorthandUsage((helpUsage)))
-	flag.Parse()
-
-	if help {
-		Usage()
-		return false
+	arg1 := ""
+	if len(os.Args) > 1 {
+		arg1 = os.Args[1]
 	}
 
-	if version {
-		Version()
+	switch arg1 {
+	case "run-script":
+		rsCmd := flag.NewFlagSet("run-script", flag.ExitOnError)
+		var pipe string
+		rsCmd.StringVar(&pipe, "pipe", "", "Pipe output to a file")
+		var name string
+		rsCmd.StringVar(&name, "name", "", "Name of the script to run")
+		rsCmd.Parse(os.Args[2:])
+		RunScript(name, pipe)
 		return false
+
+	default:
+		var version bool
+		versionUsage := "Show the version and exit"
+		flag.BoolVar(&version, "version", false, versionUsage)
+		flag.BoolVar(&version, "v", false, shorthandUsage(versionUsage))
+		var help bool
+		helpUsage := "Show the help message and exit"
+		flag.BoolVar(&help, "help", false, helpUsage)
+		flag.BoolVar(&help, "h", false, shorthandUsage((helpUsage)))
+
+		flag.Parse()
+
+		if help {
+			Usage()
+			return false
+		}
+
+		if version {
+			Version()
+			return false
+		}
+		break
 	}
 
 	return true
