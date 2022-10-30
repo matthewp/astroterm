@@ -26,6 +26,13 @@ func Init() bool {
 		RunScript(name, pipe)
 		return false
 
+	case "info":
+		iCmd := flag.NewFlagSet("info", flag.ExitOnError)
+		iCmd.Parse(os.Args[2:])
+		args := iCmd.Args()
+		Info(args)
+		return false
+
 	default:
 		var version bool
 		versionUsage := "Show the version and exit"
