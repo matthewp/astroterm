@@ -4,6 +4,7 @@ import (
 	"astroterm/astro"
 	"astroterm/db"
 	"astroterm/project"
+	"astroterm/util"
 	"regexp"
 	"strconv"
 
@@ -180,7 +181,7 @@ func (d *DevServerActor) saveDevServerInformation() error {
 
 func (d *DevServerActor) killServer() error {
 	if d.Model.Pid != 0 {
-		return killPid(d.Model.Pid)
+		return util.TermPid(d.Model.Pid)
 	}
 	return nil
 }

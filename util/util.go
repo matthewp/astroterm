@@ -2,8 +2,10 @@ package util
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"runtime"
+	"syscall"
 )
 
 func OpenBrowser(url string) error {
@@ -16,7 +18,31 @@ func OpenBrowser(url string) error {
 	case "darwin":
 		err = exec.Command("open", url).Start()
 	default:
-		err = fmt.Errorf("Unsupported platform")
+		err = fmt.Errorf("unsupported platform")
 	}
 	return err
+}
+
+func KillPid(pid int) error {
+	proc, err := os.FindProcess(pid)
+	if err == nil {
+		err = syscall.Kill(-proc.Pid, syscall.SIGKILL)
+		if err != nil {
+			return err
+		}
+		proc.Wait()
+	}
+	return nil
+}
+
+func TermPid(pid int) error {
+	proc, err := os.FindProcess(pid)
+	if err == nil {
+		err = syscall.Kill(proc.Pid, syscall.SIGTERM)
+		if err != nil {
+			return err
+		}
+		proc.Wait()
+	}
+	return nil
 }

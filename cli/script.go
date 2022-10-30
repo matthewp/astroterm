@@ -1,8 +1,11 @@
 package cli
 
 import (
+	"astroterm/util"
 	"os"
 	"os/exec"
+	"os/signal"
+	"syscall"
 )
 
 // Run an npm script
@@ -25,6 +28,19 @@ func RunScript(scriptName string, pipeTo string) error {
 	if err != nil {
 		return err
 	}
+
+	pid := cmd.Process.Pid
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-sigs
+		util.TermPid(pid)
+		util.TermPid(pid + 1) // Kill the second npm run dev
+		os.Exit(0)
+	}()
+
 	cmd.Wait()
 	return nil
 }
