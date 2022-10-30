@@ -162,7 +162,8 @@ func setOverviewText(ds *DevServerUI) {
 	ds.ovw.SetText(msg)
 }
 
-func appendLogText(ds *DevServerUI, bytes []byte) (int, error) {
+func appendLogText(ds *DevServerUI, content string) (int, error) {
+	bytes := []byte(content)
 	return ds.logs.Write(bytes)
 }
 

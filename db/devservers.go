@@ -10,6 +10,7 @@ type DevServerModel struct {
 	Port       int
 	Subpath    string
 	ProjectDir string
+	LogPath    string
 }
 
 func (m *DevServerModel) IsRunning() bool {
@@ -20,14 +21,15 @@ func (d *Database) LoadDevServerModel(projectDir string) (*DevServerModel, error
 	if err := d.ensureOpened(); err != nil {
 		return nil, err
 	}
-	stmt, err := d.db.Prepare("SELECT pid, hostname, port, subpath, projectdir FROM devservers WHERE projectdir = ?;")
+	stmt, err := d.db.Prepare("SELECT pid, hostname, port, subpath, projectdir, logpth FROM devservers WHERE projectdir = ?;")
 	if err != nil {
+		return nil, err
 	}
 	defer stmt.Close()
 
 	model := &DevServerModel{}
 	row := stmt.QueryRow(projectDir)
-	err = row.Scan(&model.Pid, &model.Hostname, &model.Port, &model.Subpath, &model.ProjectDir)
+	err = row.Scan(&model.Pid, &model.Hostname, &model.Port, &model.Subpath, &model.ProjectDir, &model.LogPath)
 	if model.Pid == 0 {
 		return nil, err
 	}
@@ -38,7 +40,7 @@ func (d *Database) AddStartedDevServer(model *DevServerModel) error {
 	if err := d.ensureOpened(); err != nil {
 		return err
 	}
-	_, err := d.db.Exec("INSERT INTO devservers VALUES(?,NULL,NULL,NULL,?);", model.Pid, model.ProjectDir)
+	_, err := d.db.Exec(`INSERT INTO devservers VALUES(?,0,"","",?,?);`, model.Pid, model.ProjectDir, model.LogPath)
 	return err
 }
 

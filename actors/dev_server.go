@@ -4,22 +4,30 @@ import (
 	"astroterm/astro"
 	"astroterm/db"
 	"astroterm/project"
+	"astroterm/util"
 	"regexp"
 	"strconv"
+
+	"github.com/Licoy/stail"
 )
 
-var portMatch = regexp.MustCompile("(localhost|127.0.0.1):([0-9]{4})(\\/.*)")
+var portMatch = regexp.MustCompile(`(localhost|127.0.0.1):([0-9]{4})(\/.*)`)
+
+// This is a magic number for the amount to backtrack the log file. We want to show
+// the astro started message but not the command we output to get there.
+var howMuchToTailExistingLog = 6
 
 type DevServerActor struct {
 	DB      *db.Database
 	Model   *db.DevServerModel
 	project *project.Project
+	si      stail.STailItem
 
 	bstarting     *broker[bool]
 	bstopped      *broker[any]
 	binitialstate *broker[*db.DevServerModel]
 	bhostinfo     *broker[*db.DevServerModel]
-	blogs         *broker[[]byte]
+	blogs         *broker[string]
 }
 
 func NewDevServerActor(project *project.Project) *DevServerActor {
@@ -31,7 +39,7 @@ func NewDevServerActor(project *project.Project) *DevServerActor {
 		bstopped:      newBroker[any](),
 		binitialstate: newBroker[*db.DevServerModel](),
 		bhostinfo:     newBroker[*db.DevServerModel](),
-		blogs:         newBroker[[]byte](),
+		blogs:         newBroker[string](),
 	}
 }
 
@@ -56,7 +64,7 @@ func (d *DevServerActor) SubscribeToHostInfo() chan *db.DevServerModel {
 	return d.bhostinfo.Subscribe()
 }
 
-func (d *DevServerActor) SubscribeToLogs() chan []byte {
+func (d *DevServerActor) SubscribeToLogs() chan string {
 	return d.blogs.Subscribe()
 }
 
@@ -89,6 +97,13 @@ func (d *DevServerActor) startup() {
 
 	d.LoadDevServerModel()
 	d.binitialstate.Publish(d.Model)
+
+	if d.Model.LogPath != "" {
+		d.tailLogFile(d.Model.LogPath, howMuchToTailExistingLog)
+		//if err != nil {
+		// TODO log this some how?
+		//}
+	}
 }
 
 func (d *DevServerActor) LoadDevServerModel() {
@@ -106,35 +121,48 @@ func (d *DevServerActor) LoadDevServerModel() {
 }
 
 func (d *DevServerActor) startServer() error {
-	cmd, err := astro.RunCommand(astro.Dev, d)
+	pid, logpth, err := astro.RunDevAndPipeToLog(d.project.Dir)
 	if err != nil {
 		return err
 	}
 
-	d.Model.Pid = cmd.Process.Pid
+	d.Model.Pid = pid
+	d.Model.LogPath = logpth
 	d.DB.AddStartedDevServer(d.Model)
+	d.tailLogFile(logpth, 0)
+
 	return nil
 }
 
-func (d *DevServerActor) Write(p []byte) (int, error) {
-	if d.Model.Port == 0 {
-		hostname, port, subpath := d.parseHostInformation(p)
-		if hostname != "" {
-			d.Model.Port = port
-			d.Model.Hostname = hostname
-			d.Model.Subpath = subpath
-			d.saveDevServerInformation()
-
-			d.bhostinfo.Publish(d.Model)
-		}
+func (d *DevServerActor) tailLogFile(logpth string, tailLine int) error {
+	st, err := stail.New(stail.Options{})
+	if err != nil {
+		return err
 	}
 
-	d.blogs.Publish(p)
-	return 0, nil
+	d.si, err = st.Tail(logpth, tailLine, func(content string) {
+		if d.Model.Port == 0 {
+			hostname, port, subpath := d.parseHostInformation(content)
+			if hostname != "" {
+				d.Model.Port = port
+				d.Model.Hostname = hostname
+				d.Model.Subpath = subpath
+				d.saveDevServerInformation()
+
+				d.bhostinfo.Publish(d.Model)
+			}
+		}
+
+		d.blogs.Publish(content)
+	})
+	if err != nil {
+		return err
+	}
+	d.si.Watch()
+	return nil
 }
 
-func (d *DevServerActor) parseHostInformation(p []byte) (string, int, string) {
-	part := string(p)
+func (d *DevServerActor) parseHostInformation(part string) (string, int, string) {
 	rs := portMatch.FindStringSubmatch(part)
 	if len(rs) > 1 {
 		portString := rs[2]
@@ -153,7 +181,7 @@ func (d *DevServerActor) saveDevServerInformation() error {
 
 func (d *DevServerActor) killServer() error {
 	if d.Model.Pid != 0 {
-		return killPid(d.Model.Pid)
+		return util.TermPid(d.Model.Pid)
 	}
 	return nil
 }

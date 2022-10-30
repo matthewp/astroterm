@@ -38,3 +38,7 @@ func (p *Project) Name() string {
 	}
 	return p.pkg.Name
 }
+
+func (p *Project) PackageJson() *PackageJson {
+	return p.pkg
+}
