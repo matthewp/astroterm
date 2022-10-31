@@ -1,4 +1,4 @@
-BINARY  := astroterm
+BINARY?=astroterm
 TAG     := $(shell git describe --tags --always --abbrev=0 --match="[0-9]*.[0-9]*.[0-9]*" 2> /dev/null)
 VERSION := $(shell echo "${TAG}" | sed 's/^//')
 
