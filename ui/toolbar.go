@@ -23,22 +23,24 @@ type Toolbar struct {
 	state           *toolbarState
 	servers         int
 	devActor        *actors.DevServerActor
+	buildActor      *actors.BuildActor
 	runList         *bestbar.MenuList
 	devServerAction *bestbar.MenuListItem
 }
 
-func NewToolbar(u *UI, devActor *actors.DevServerActor) *Toolbar {
+func NewToolbar(u *UI, devActor *actors.DevServerActor, buildActor *actors.BuildActor) *Toolbar {
 	t := bestbar.NewToolbar()
 	t.SetDrawFunc(func() {
 		u.Draw()
 	})
 
 	tb := &Toolbar{
-		state:    &toolbarState{},
-		Toolbar:  t,
-		u:        u,
-		servers:  0,
-		devActor: devActor,
+		state:      &toolbarState{},
+		Toolbar:    t,
+		u:          u,
+		servers:    0,
+		devActor:   devActor,
+		buildActor: buildActor,
 	}
 
 	t.AddMenuList("File", 'F').
@@ -49,7 +51,8 @@ func NewToolbar(u *UI, devActor *actors.DevServerActor) *Toolbar {
 	tb.runList = t.AddMenuList("🔴 Run", 'R').
 		AddItem("Build", 'B', func() {
 			if !tb.state.buildRunning {
-
+				// TODO toggle the state i guess
+				tb.buildActor.StartBuild()
 			}
 		}).
 		AddItem("Start dev server", 'd', func() {
@@ -107,10 +110,10 @@ func (t *Toolbar) listenToEvents() {
 	stchan := t.devActor.SubscribeToStopped()
 	for {
 		select {
-		case _ = <-schan:
+		case <-schan:
 			t.setDevServerRunning(true)
 			break
-		case _ = <-stchan:
+		case <-stchan:
 			t.setDevServerRunning(false)
 			break
 		}

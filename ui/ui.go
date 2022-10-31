@@ -48,7 +48,6 @@ type UISection interface {
 func NewUI() *UI {
 	app := tview.NewApplication()
 	ui := &UI{
-		BuildActor:     nil,
 		DevModel:       &db.DevServerModel{},
 		CurrentProject: loadLocalProject(),
 		app:            app,
@@ -56,7 +55,8 @@ func NewUI() *UI {
 		sections:       make(map[UISectionType]UISection),
 	}
 	ui.DevActor = actors.NewDevServerActor(ui.CurrentProject).Start()
-	ui.toolbar = NewToolbar(ui, ui.DevActor)
+	ui.BuildActor = actors.NewBuildActor(ui.CurrentProject).Start()
+	ui.toolbar = NewToolbar(ui, ui.DevActor, ui.BuildActor)
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Rune() {
@@ -193,9 +193,6 @@ func (u *UI) LoadSection(sec UISectionType) UISection {
 		val = NewDevServer(u, u.DevActor)
 		break
 	case SectionBuild:
-		if u.BuildActor == nil {
-			u.BuildActor = actors.NewBuildActor(u.CurrentProject).Start()
-		}
 		val = NewBuildUI(u, u.BuildActor)
 		break
 	case SectionIntegrations:
