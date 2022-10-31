@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"path"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 const dbName = "stateV0.db"
@@ -36,7 +36,7 @@ func (d *Database) Open() error {
 	}
 
 	dbPath := path.Join(homeFolder, dbName)
-	db, err := sql.Open("sqlite3", dbPath)
+	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		return err
 	}
