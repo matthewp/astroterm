@@ -189,6 +189,9 @@ func (d *DevServerActor) killServer() error {
 func (d *DevServerActor) shutdownServer() error {
 	e1 := d.killServer()
 	e2 := d.DB.DeleteDevServer(d.Model)
+	if d.si != nil {
+		d.si.Close()
+	}
 	if e1 != nil {
 		return e1
 	}

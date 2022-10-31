@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"astroterm/astro"
+	"astroterm/home"
 	"astroterm/project"
 	"errors"
 	"fmt"
@@ -22,7 +22,7 @@ func Info(args []string) error {
 			return err
 		}
 
-		logpth, err := astro.GetDevLogPath(proj.Dir)
+		logpth, err := home.GetDevLogPath(proj.Dir)
 		if err != nil {
 			return err
 		}

@@ -16,6 +16,7 @@ type UI struct {
 	DB             *db.Database
 	app            *tview.Application
 	DevActor       *actors.DevServerActor
+	BuildActor     *actors.BuildActor
 	grid           *tview.Grid
 	menu           *Menu
 	cmds           *BottomCommandsUI
@@ -47,6 +48,7 @@ type UISection interface {
 func NewUI() *UI {
 	app := tview.NewApplication()
 	ui := &UI{
+		BuildActor:     nil,
 		DevModel:       &db.DevServerModel{},
 		CurrentProject: loadLocalProject(),
 		app:            app,
@@ -191,7 +193,10 @@ func (u *UI) LoadSection(sec UISectionType) UISection {
 		val = NewDevServer(u, u.DevActor)
 		break
 	case SectionBuild:
-		val = NewBuildUI()
+		if u.BuildActor == nil {
+			u.BuildActor = actors.NewBuildActor(u.CurrentProject).Start()
+		}
+		val = NewBuildUI(u, u.BuildActor)
 		break
 	case SectionIntegrations:
 		val = NewIntegrationsUI()

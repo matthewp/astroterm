@@ -162,7 +162,7 @@ func setOverviewText(ds *DevServerUI) {
 	ds.ovw.SetText(msg)
 }
 
-func appendLogText(ds *DevServerUI, content string) (int, error) {
+func (ds *DevServerUI) appendLogText(content string) (int, error) {
 	bytes := []byte(content)
 	return ds.logs.Write(bytes)
 }
@@ -299,7 +299,7 @@ func (ds *DevServerUI) listenForDevEvents() {
 			setOverviewText(ds)
 			break
 		case data := <-lchan:
-			appendLogText(ds, data)
+			ds.appendLogText(data)
 			break
 		case _ = <-stchan:
 			ds.setServerRunning(true)

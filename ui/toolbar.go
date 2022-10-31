@@ -14,6 +14,7 @@ import (
 type toolbarState struct {
 	devRunning     bool
 	previewRunning bool
+	buildRunning   bool
 }
 
 type Toolbar struct {
@@ -47,7 +48,9 @@ func NewToolbar(u *UI, devActor *actors.DevServerActor) *Toolbar {
 		})
 	tb.runList = t.AddMenuList("🔴 Run", 'R').
 		AddItem("Build", 'B', func() {
+			if !tb.state.buildRunning {
 
+			}
 		}).
 		AddItem("Start dev server", 'd', func() {
 			if tb.state.devRunning {

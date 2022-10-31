@@ -22,6 +22,9 @@ func RunScript(scriptName string, pipeTo string) error {
 		defer outfile.Close()
 		cmd.Stdout = outfile
 		cmd.Stderr = outfile
+	} else {
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
 	}
 
 	err = cmd.Start()
