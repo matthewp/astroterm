@@ -26,7 +26,7 @@ func OpenBrowser(url string) error {
 func KillPid(pid int) error {
 	proc, err := os.FindProcess(pid)
 	if err == nil {
-		err = syscall.Kill(-proc.Pid, syscall.SIGKILL)
+		err = proc.Signal(syscall.SIGKILL)
 		if err != nil {
 			return err
 		}
@@ -38,7 +38,7 @@ func KillPid(pid int) error {
 func TermPid(pid int) error {
 	proc, err := os.FindProcess(pid)
 	if err == nil {
-		err = syscall.Kill(proc.Pid, syscall.SIGTERM)
+		err = proc.Signal(syscall.SIGTERM)
 		if err != nil {
 			return err
 		}
