@@ -12,4 +12,4 @@ jobs:
     needs: build-binaries
     steps:
     - name: Verify Binary Works
-    - run: build/astroterm-linux-amd64
+      run: build/astroterm-linux-amd64
