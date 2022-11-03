@@ -1,0 +1,52 @@
+
+name: Build Astroterm
+on: worflow_call
+
+jobs:
+  build-all:
+    name: Build Astroterm Binaries
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go_version: [1.18]
+        include:
+        - os: darwin
+          arch: amd64
+        - os: darwin
+          arch: arm64
+        - os: linux
+          arch: 386
+        - os: linux
+          arch: amd64
+        - os: windows
+          arch: amd64
+          ext: exe
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-go@v3
+      name: Setup Go
+      with:
+        go-version: ${{ matrix.go_version }}
+    - name: Build
+      run: |
+        GOOS=darwin GOARCH=amd64 go build -ldflags "-X 'astroterm/version.Version=${{ steps.vars.outputs.tag }}'" -o build/astroterm-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.ext }}
+    # - name: Build for OSX (amd64)
+    #   if: startsWith(github.ref, 'refs/tags/')
+    #   run: |
+    #     GOOS=darwin GOARCH=amd64 go build -ldflags "-X 'astroterm/version.Version=${{ steps.vars.outputs.tag }}'" -o build/astroterm-darwin-amd64
+    # - name: Build for OSX (arm64)
+    #   if: startsWith(github.ref, 'refs/tags/')
+    #   run: |
+    #     GOOS=darwin GOARCH=arm64 go build -ldflags "-X 'astroterm/version.Version=${{ steps.vars.outputs.tag }}'" -o build/astroterm-darwin-arm64
+    # - name: Build for Linux (386)
+    #   if: startsWith(github.ref, 'refs/tags/')
+    #   run: |
+    #     GOOS=linux GOARCH=386 go build -ldflags "-X 'astroterm/version.Version=${{ steps.vars.outputs.tag }}'" -o build/astroterm-linux-386
+    # - name: Build for Linux (amd64)
+    #   if: startsWith(github.ref, 'refs/tags/')
+    #   run: |
+    #     GOOS=linux GOARCH=amd64 go build -ldflags "-X 'astroterm/version.Version=${{ steps.vars.outputs.tag }}'" -o build/astroterm-linux-amd64
+    # - name: Build for Windows (amd64)
+    #   if: startsWith(github.ref, 'refs/tags/')
+    #   run: |
+    #     GOOS=windows GOARCH=amd64 go build -ldflags "-X 'astroterm/version.Version=${{ steps.vars.outputs.tag }}'" -o build/astroterm-windows-amd64.exe

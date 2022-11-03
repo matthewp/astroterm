@@ -1,0 +1,8 @@
+
+name: Pull Request
+on:
+  push
+
+jobs:
+  build-binaries:
+    uses: matthewp/astroterm/.github/workflows/build.yml@main
