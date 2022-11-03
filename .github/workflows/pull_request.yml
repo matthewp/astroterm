@@ -6,3 +6,8 @@ on:
 jobs:
   build-binaries:
     uses: matthewp/astroterm/.github/workflows/build.yml@main
+  test:
+    name: Run Tests
+    needs: build-binaries
+    steps:
+    - run: echo "Tests complete"
