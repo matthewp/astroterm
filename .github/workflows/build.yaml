@@ -10,18 +10,11 @@ jobs:
       fail-fast: true
       matrix:
         go_version: [1.18]
+        os: [darwin, linux, windows]
+        arch: [amd64, arm64]
         include:
-          - os: darwin
-            arch: amd64
-          - os: darwin
-            arch: arm64
           - os: linux
             arch: 386
-          - os: linux
-            arch: amd64
-          - os: windows
-            arch: amd64
-            ext: .exe
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-go@v3
@@ -30,7 +23,7 @@ jobs:
         go-version: ${{ matrix.go_version }}
     - name: Build
       run: |
-        GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -ldflags "-X 'astroterm/version.Version=${{ steps.vars.outputs.tag }}'" -o build/astroterm-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.ext }}
+        GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -ldflags "-X 'astroterm/version.Version=${{ steps.vars.outputs.tag }}'" -o build/astroterm-${{ matrix.os }}-${{ matrix.arch }}
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
