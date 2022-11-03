@@ -30,5 +30,11 @@ jobs:
     - name: Build
       run: |
         GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -ldflags "-X 'astroterm/version.Version=${{ steps.vars.outputs.tag }}'" -o build/astroterm-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.ext }}
+
+  save-artifacts:
+    name: Upload Build Artifacts
+    needs: build-all
+    runs-on: ubuntu-latest
+    steps:
     - name: List Build Output
       run: ls build
