@@ -76,7 +76,7 @@ func RunBuild() chan bool {
 // Private
 func (b *BuildActor) startup() {
 	go b.blogs.Start()
-	go b.figureOutDistSituation()
+	//go b.figureOutDistSituation()
 }
 
 func (b *BuildActor) startBuild() error {

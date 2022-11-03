@@ -2,7 +2,6 @@ package ui
 
 import (
 	"astroterm/actors"
-	"astroterm/debug"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -66,8 +65,7 @@ func (b *BuildUI) listenForBuildEvents() {
 		select {
 		case data := <-lchan:
 			b.appendLogText(data)
-		case stats := <-schan:
-			debug.Log("Got these stats - %+v\n", stats)
+		case <-schan:
 		}
 
 	}

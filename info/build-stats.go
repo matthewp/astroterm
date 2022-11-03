@@ -1,7 +1,6 @@
 package info
 
 import (
-	"astroterm/debug"
 	"os"
 	"path/filepath"
 	"strings"
@@ -49,7 +48,6 @@ func (stats *BuildStats) crawlStaticOutputDir(outDir string, subDir string) bool
 				Path:     path,
 				HtmlSize: htmlSize,
 			}
-			debug.Log("pageStats - %+v\n", pageStats)
 			stats.PageStats = append(stats.PageStats, pageStats)
 			break
 		// TODO some JS stuff
