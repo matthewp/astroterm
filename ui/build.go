@@ -2,6 +2,7 @@ package ui
 
 import (
 	"astroterm/actors"
+	"astroterm/debug"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -59,10 +60,16 @@ func NewBuildUI(u *UI, buildActor *actors.BuildActor) *BuildUI {
 
 func (b *BuildUI) listenForBuildEvents() {
 	lchan := b.buildActor.SubscribeToLogs()
+	schan := b.buildActor.SubscribeToStats()
 
 	for {
-		data := <-lchan
-		b.appendLogText(data)
+		select {
+		case data := <-lchan:
+			b.appendLogText(data)
+		case stats := <-schan:
+			debug.Log("Got these stats - %+v\n", stats)
+		}
+
 	}
 }
 

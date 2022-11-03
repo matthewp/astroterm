@@ -2,6 +2,7 @@ package astro
 
 import (
 	"astroterm/home"
+	"os/exec"
 )
 
 func RunBuildAndPipeToLog(projectDir string) (int, string, error) {
@@ -9,5 +10,13 @@ func RunBuildAndPipeToLog(projectDir string) (int, string, error) {
 	if err != nil {
 		return 0, "", err
 	}
-	return runScript("build", logpath)
+	return runScriptAndPipeToLog("build", logpath)
+}
+
+func RunBuild(projectDir string) (*exec.Cmd, error) {
+	cmd, err := runScript("build")
+	if err != nil {
+		return nil, err
+	}
+	return cmd, nil
 }

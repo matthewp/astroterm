@@ -9,5 +9,5 @@ func RunDevAndPipeToLog(projectDir string) (int, string, error) {
 	if err != nil {
 		return 0, "", err
 	}
-	return runScript("dev", logpath)
+	return runScriptAndPipeToLog("dev", logpath)
 }
