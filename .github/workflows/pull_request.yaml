@@ -5,7 +5,7 @@ on:
 
 jobs:
   build-binaries:
-    uses: matthewp/astroterm/.github/workflows/build.yml@main
+    uses: matthewp/astroterm/.github/workflows/build.yaml@main
   test:
     name: Run Tests
     needs: build-binaries
