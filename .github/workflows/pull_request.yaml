@@ -5,7 +5,11 @@ on:
 
 jobs:
   build-binaries:
-    uses: matthewp/astroterm/.github/workflows/build.yaml@main
+    - uses: matthewp/astroterm/.github/workflows/build.yaml@main
+    - name: Download artifacts
+      uses: actions/download-artifact@v3
+    - name: List Binaries
+      run: ls build
   test:
     name: Run Tests
     runs-on: ubuntu-latest
