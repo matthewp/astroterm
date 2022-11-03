@@ -6,7 +6,9 @@ on:
 
 jobs:
   build-binaries:
+    name: Build Binaries for Release
     uses: matthewp/astroterm/.github/workflows/build.yaml@main
+    if: startsWith(github.ref, 'refs/tags/')
 
   releases-matrix:
     name: Release Go Binary
