@@ -1,10 +1,13 @@
 package actors
 
 import (
+	abuild "astroterm/actors/build"
 	"astroterm/astro"
 	"astroterm/db"
 	"astroterm/info"
 	"astroterm/project"
+	"fmt"
+	"os"
 
 	"github.com/Licoy/stail"
 )
@@ -13,22 +16,25 @@ type BuildActor struct {
 	DB  *db.Database
 	Pid int
 
-	project *project.Project
-	si      stail.STailItem
-	config  *info.ConfigInfo
-	stats   *info.BuildStats
+	project       *project.Project
+	si            stail.STailItem
+	config        *info.ConfigInfo
+	configBuilder *abuild.ConfigBuilder
+
+	stats *info.BuildStats
 
 	blogs  *broker[string]
 	bstats *broker[*info.BuildStats]
 }
 
 func NewBuildActor(project *project.Project) *BuildActor {
-	return &BuildActor{
-		DB:      db.NewDatabase(),
-		project: project,
 
-		blogs:  newBroker[string](),
-		bstats: newBroker[*info.BuildStats](),
+	return &BuildActor{
+		DB:            db.NewDatabase(),
+		project:       project,
+		configBuilder: abuild.NewConfigBuilder(),
+		blogs:         newBroker[string](),
+		bstats:        newBroker[*info.BuildStats](),
 	}
 }
 
@@ -63,11 +69,36 @@ func (b *BuildActor) SubscribeToStats() chan *info.BuildStats {
 	return ch
 }
 
-func RunBuild() chan bool {
-	ch := make(chan bool)
+func (b *BuildActor) RunBuildToCompletion() chan error {
+	ch := make(chan error)
 
 	go func() {
+		configSource, err := b.configBuilder.CreateBuildConfig(b.project)
+		if err != nil {
+			ch <- err
+			return
+		}
 
+		cmd, err := astro.CreateBuildCommandWithCustomConfig(b.project.Dir, configSource)
+		collector := abuild.NewBuildDataCollector(os.Stderr)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = collector
+		if err != nil {
+			ch <- err
+			return
+		}
+
+		cmd.Start()
+		err = cmd.Wait()
+		if err != nil {
+			ch <- err
+		}
+
+		fmt.Printf("got data! %v\n", collector.Raw())
+
+		// save results to a database
+
+		ch <- nil
 	}()
 
 	return ch
@@ -77,6 +108,9 @@ func RunBuild() chan bool {
 func (b *BuildActor) startup() {
 	go b.blogs.Start()
 	//go b.figureOutDistSituation()
+
+	// TODO testing only, remove
+	b.RunBuildToCompletion()
 }
 
 func (b *BuildActor) startBuild() error {

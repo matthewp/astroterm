@@ -42,3 +42,7 @@ func (p *Project) Name() string {
 func (p *Project) PackageJson() *PackageJson {
 	return p.pkg
 }
+
+func (p *Project) ConfigPath() string {
+	return p.env.ConfigPath
+}

@@ -1,0 +1,19 @@
+import config from '{{ .Path }}';
+
+if(!config.integrations) {
+  config.integrations = [];
+}
+
+config.integrations.push({
+  name: 'astroterm:build',
+  hooks: {
+    'astro:build:done'({ pages }){
+      const data = JSON.stringify({
+        pages
+      });
+      console.error(`ASTROTERM_BUILD_DATA:START${data}ASTROTERM_BUILD_DATA:END`);
+    }
+  }
+});
+
+export default config;

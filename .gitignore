@@ -1,5 +1,5 @@
 node_modules/
-build/
+/build/
 examples/**/dist/
 _site/dist/
 .DS_Store

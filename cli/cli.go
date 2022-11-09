@@ -33,6 +33,10 @@ func Init() bool {
 		Info(args)
 		return false
 
+	case "build":
+		RunBuild()
+		return false
+
 	default:
 		var version bool
 		versionUsage := "Show the version and exit"

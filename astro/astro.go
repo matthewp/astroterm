@@ -24,29 +24,38 @@ func pipetotext(pipe io.ReadCloser, wrtr io.Writer) {
 	}
 }
 
-func RunCommand(subcmd AstroCommand, wrtr io.Writer) (*exec.Cmd, error) {
+func getAstroBinaryPath(env *aenv.TermEnvironment) (string, error) {
+	relBinPath := path.Join("node_modules", ".bin", "astro")
+	if aenv.TryFindFile(env.Pwd, relBinPath) == "" {
+		return "", errors.New("unable to find the astro binary. Do you need to run npm install?")
+	}
+	binPath := path.Join(env.Pwd, relBinPath)
+	return binPath, nil
+}
+
+func RunCommandWithWriter(subcmd AstroCommand, wrtr io.Writer) (*exec.Cmd, error) {
 	env, err := aenv.GetEnvironment()
 	if err != nil {
 		return nil, err
 	}
 
-	relBinPath := path.Join("node_modules", ".bin", "astro")
-	if aenv.TryFindFile(env.Pwd, relBinPath) == "" {
-		return nil, errors.New("unable to find the astro binary. Do you need to run npm install?")
+	binPath, err := getAstroBinaryPath(env)
+	if err != nil {
+		return nil, err
 	}
 
-	binPath := path.Join(env.Pwd, relBinPath)
-	cmd := exec.Command("node", binPath, "dev")
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return nil, err
-	}
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return nil, err
-	}
+	cmd := exec.Command("node", binPath, string(subcmd))
 
 	if wrtr != nil {
+		stdout, err := cmd.StdoutPipe()
+		if err != nil {
+			return nil, err
+		}
+		stderr, err := cmd.StderrPipe()
+		if err != nil {
+			return nil, err
+		}
+
 		go pipetotext(stdout, wrtr)
 		go pipetotext(stderr, wrtr)
 	}
