@@ -1,6 +1,9 @@
 package build
 
 import (
+	"astroterm/info"
+	"encoding/json"
+	"errors"
 	"io"
 	"strings"
 )
@@ -54,4 +57,14 @@ func (bd *BuildDataCollector) Write(p []byte) (n int, err error) {
 
 func (bd *BuildDataCollector) Raw() string {
 	return bd.raw
+}
+
+func (bd *BuildDataCollector) Json() (*info.BuildData, error) {
+	if bd.raw == "" {
+		return nil, errors.New("no build data collected")
+	}
+
+	var data info.BuildData
+	err := json.Unmarshal([]byte(bd.raw), &data)
+	return &data, err
 }
